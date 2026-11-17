@@ -111,3 +111,11 @@ Two feel changes. `drawThreat` in `enemies.js` paints a dashed lane and pulse ri
 Recaptured all four JPEGs at 1280×720 (cover, play, boss, dawn). `MAKEFUN_OUTPUT_DIR=/tmp/bg2out node main.ts` exited 0 and wrote `dossier.json` (282619 bytes), `game/`, and the four screenshots.
 
 This session commits and pushes. Do not bind port 8790.
+
+### Session 7 — own entrypoint
+
+Rewrote `main.ts` in Ashwell's own words. It still imports `buildDossier` from `vendor/makefun-game.ts` (vendor unchanged), copies `game/` and `screenshots/` into `MAKEFUN_OUTPUT_DIR` or `/output`, and writes `dossier.json` with the best-game-01 caps (text 163840, screenshots 4 / 262144, game 993 files / 50331648 bytes / 1000-byte paths). It exits if `game/index.html` is missing and warns when `screenshots/` is empty or holds more than four images.
+
+`MAKEFUN_OUTPUT_DIR=/tmp/bg2out timeout 120 node main.ts` exited 0. `dossier.json` is 282619 bytes. The four JPEGs are present: `01-cover.jpg`, `02-play.jpg`, `03-boss.jpg`, `04-end.jpg`. `game/index.html` was copied.
+
+This session commits and pushes. Do not bind port 8790.

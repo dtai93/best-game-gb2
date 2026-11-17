@@ -1,79 +1,104 @@
-// The screenshot scenes behind ?shot=start|play|end. Each one plays the real rules forward from a
-// fresh world for a fixed number of steps, steered by a simple autopilot (look ahead each way the
-// paddle could move, keep clear of blocks, chase the lowest coin when that is safe), so the frame
-// is what a short game really looks like and the same seed always gives the same frame.
-import { FIELD, PLAYER, STEP } from './config.js';
-import { EVENT_OVER, KIND_BLOCK } from './world.js';
-import { SCREEN_OVER, SCREEN_PLAY, SCREEN_TITLE } from './render.js';
+/** Deterministic poses for ?shot=start|play|boss|end. No simulation after the pose. */
 
-const START_SECONDS = 5;
-const PLAY_SECONDS = 26;
-const END_LIMIT_SECONDS = 600;
-/**
- * How far ahead, in seconds, the autopilot checks each way it could move: the play scene's pilot
- * looks well ahead and keeps all its lives; the end scene's looks only a moment ahead, so it is
- * caught out once the blocks speed up, as a hurried player is.
- */
-const HORIZON_PLAY = 0.7;
-const HORIZON_END = 0.25;
-const SAMPLE = 1 / 30;
-const DIRECTIONS = [0, -1, 1];
-/** Extra room, each side, it keeps between the paddle and a block. */
-const MARGIN = 10;
+import { ARENA, BOSS } from './config.js';
+import { spawnShade } from './enemies.js';
+import { beginBoss } from './boss.js';
 
-/** Seconds until moving in `direction` (-1, 0, 1) runs the paddle into a block; Infinity when it never does. */
-function timeToHit(state, direction, horizon) {
-  const player = state.player;
-  for (let t = SAMPLE; t <= horizon; t += SAMPLE) {
-    const x = Math.min(FIELD.width - player.width, Math.max(0, player.x + direction * PLAYER.speed * t));
-    for (let index = 0; index < state.items.length; index += 1) {
-      const item = state.items[index];
-      if (!item.active || item.kind !== KIND_BLOCK) continue;
-      const y = item.y + item.speed * t;
-      if (y + item.height > player.y && y < player.y + player.height && item.x < x + player.width + MARGIN && item.x + item.width > x - MARGIN) return t;
-    }
-  }
-  return Infinity;
+/** Paint one named scene onto a freshly reset run. */
+export function poseShot(name, state, player, foes, boss) {
+  state.time = 4.2;
+  if (name === 'play') posePlay(state, player, foes);
+  else if (name === 'boss') poseBoss(state, player, foes, boss);
+  else if (name === 'end') poseEnd(state);
+  else state.screen = 'title';
 }
 
-/** Of the safe ways to move, the one toward the lowest coin (or the centre); else the one that is hit last. */
-function autopilot(state, horizon) {
-  const player = state.player;
-  let coin = null;
-  for (let index = 0; index < state.items.length; index += 1) {
-    const item = state.items[index];
-    if (item.active && item.kind !== KIND_BLOCK && (coin === null || item.y > coin.y)) coin = item;
+function posePlay(state, player, foes) {
+  state.screen = 'play';
+  state.night = 3;
+  state.score = 1860;
+  state.best = 4200;
+  state.combo = 4;
+  state.oil = 0.74;
+  state.heat = 0.28;
+  state.special = 0.62;
+  state.loadout.ranks = { wick: 1, glass: 1 };
+  player.reset(ARENA.cx - 90, ARENA.cy + 70);
+  player.body.angle = -0.45;
+  placeShade(foes, 'moth', -0.4, 168, 0.2);
+  placeShade(foes, 'moth', 0.55, 196, 0.55);
+  const hound = placeShade(foes, 'hound', 2.2, 214, 0.15);
+  if (hound) {
+    hound.mode = 1;
+    hound.phase = 0.24;
+    const dx = player.body.x - hound.x;
+    const dy = player.body.y - hound.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    hound.gx = dx / dist;
+    hound.gy = dy / dist;
+    hound.angle = Math.atan2(dy, dx);
   }
-  const target = coin === null ? FIELD.width / 2 : coin.x + coin.width / 2;
-  const centre = player.x + player.width / 2;
-  const wanted = target > centre + 8 ? 1 : target < centre - 8 ? -1 : 0;
-  let best = wanted;
-  let bestTime = timeToHit(state, wanted, horizon);
-  for (let index = 0; index < DIRECTIONS.length && bestTime !== Infinity; index += 1) {
-    const time = timeToHit(state, DIRECTIONS[index], horizon);
-    if (time > bestTime) {
-      bestTime = time;
-      best = DIRECTIONS[index];
-    }
+  const hexer = placeShade(foes, 'hexer', 1.2, 236, 0.4);
+  if (hexer) hexer.phase = 0.18;
+  const wisp = placeShade(foes, 'wisp', -1.7, 188, 0.7);
+  if (wisp) wisp.phase = 1.42;
+  const bolt = state.bolts && state.bolts[0];
+  if (bolt) {
+    bolt.alive = true;
+    bolt.x = player.body.x + 48;
+    bolt.y = player.body.y - 22;
+    bolt.vx = 0;
+    bolt.vy = 0;
+    bolt.life = 0.4;
+    bolt.radius = 5;
   }
-  return best;
 }
 
-/**
- * Set `world` to the named scene (start, play or end; any other name is start) and return the
- * screen to draw over it and the best score to show.
- */
-export function stageShot(name, world) {
-  world.reset();
-  if (name !== 'play' && name !== 'end') {
-    for (let index = 0; index < START_SECONDS / STEP; index += 1) world.step(STEP, 0, true);
-    return { screen: SCREEN_TITLE, best: 0 };
-  }
-  const limit = name === 'end' ? END_LIMIT_SECONDS : PLAY_SECONDS;
-  const horizon = name === 'end' ? HORIZON_END : HORIZON_PLAY;
-  for (let index = 0; index < limit / STEP; index += 1) {
-    if (world.step(STEP, autopilot(world.state, horizon), false) & EVENT_OVER) break;
-  }
-  const over = world.state.lives === 0;
-  return { screen: over ? SCREEN_OVER : SCREEN_PLAY, best: world.state.score };
+function poseBoss(state, player, foes, boss) {
+  state.screen = 'play';
+  state.night = 8;
+  state.score = 11240;
+  state.best = 9800;
+  state.combo = 6;
+  state.heat = 0.46;
+  state.special = 0.84;
+  state.loadout.ranks = { glass: 2, cloak: 1, wick: 1, breath: 1 };
+  player.reset(ARENA.cx + 96, ARENA.cy + 86);
+  player.body.angle = Math.atan2(-126, -256);
+  beginBoss(boss, state);
+  state.oil = 0.55;
+  boss.mode = 'warn';
+  boss.attack = 'wedge';
+  boss.phase = 2;
+  boss.hp = Math.round(BOSS.hp * 0.58);
+  boss.maxHp = BOSS.hp;
+  boss.invuln = 0;
+  boss.timer = 0.28;
+  boss.warn = 0.72;
+  boss.spin = 0.6;
+  boss.x = ARENA.cx - 160;
+  boss.y = ARENA.cy - 40;
+  boss.aim = Math.atan2(player.body.y - boss.y, player.body.x - boss.x);
+  state.particles.clear();
+  state.shake = 0;
+  state.flash = 0;
+  placeShade(foes, 'moth', 2.6, 200, 0.3);
+  placeShade(foes, 'hound', -2.2, 230, 0.4);
+}
+
+function poseEnd(state) {
+  state.screen = 'end';
+  state.night = 8;
+  state.score = 14860;
+  state.outcome = 'dawn';
+  state.best = Math.max(state.best, state.score);
+}
+
+function placeShade(foes, type, angle, dist, salt) {
+  const enemy = spawnShade(foes, type, angle, salt);
+  if (!enemy) return;
+  enemy.x = ARENA.cx + Math.cos(angle) * dist;
+  enemy.y = ARENA.cy + Math.sin(angle) * dist;
+  enemy.angle = angle + Math.PI;
+  if (type === 'hound') enemy.mode = 2;
 }

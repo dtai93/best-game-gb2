@@ -1,9 +1,12 @@
 /** Draws the round arena, the well, the keeper, and the screen overlays. */
 
 import { drawBoss } from './boss.js';
+import { fightFrame } from './camera.js';
+import { drawChamber, paintBackdrop } from './chamber.js';
 import { drawBolts, drawHalo } from './combat.js';
 import { ARENA, FONT, PALETTE, VIEW, WELL } from './config.js';
 import { drawEnemies } from './enemies.js';
+import { drawBossMark, drawBursts, drawEnemyMarks, drawIncoming } from './markers.js';
 import { drawInterface } from './ui.js';
 
 const STONE_COUNT = 32;
@@ -15,6 +18,7 @@ export function createRenderer(canvas) {
   if (!ctx) throw new Error('Canvas 2D is unavailable');
 
   const view = { scale: 1, offsetX: 0, offsetY: 0 };
+  let cam = fightFrame(null);
 
   function resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -32,32 +36,52 @@ export function createRenderer(canvas) {
     const rect = canvas.getBoundingClientRect();
     const px = (clientX - rect.left) * (canvas.width / rect.width);
     const py = (clientY - rect.top) * (canvas.height / rect.height);
+    const viewX = (px - view.offsetX) / view.scale;
+    const viewY = (py - view.offsetY) / view.scale;
     return {
-      x: (px - view.offsetX) / view.scale,
-      y: (py - view.offsetY) / view.scale,
+      x: (viewX - VIEW.width / 2) / cam.zoom + cam.cx,
+      y: (viewY - VIEW.height / 2) / cam.zoom + cam.cy,
     };
+  }
+
+  function applyWorld() {
+    const zoom = cam.zoom;
+    ctx.setTransform(
+      view.scale * zoom,
+      0,
+      0,
+      view.scale * zoom,
+      view.offsetX + view.scale * (VIEW.width / 2 - cam.cx * zoom),
+      view.offsetY + view.scale * (VIEW.height / 2 - cam.cy * zoom),
+    );
   }
 
   function draw(state) {
     resize();
+    cam = fightFrame(state);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const sky = ctx.createRadialGradient(
-      canvas.width / 2, canvas.height / 2, canvas.height * 0.15,
-      canvas.width / 2, canvas.height / 2, canvas.height * 0.75,
-    );
-    sky.addColorStop(0, '#3a4c92');
-    sky.addColorStop(0.55, '#2a2060');
-    sky.addColorStop(1, '#1c1840');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.setTransform(view.scale, 0, 0, view.scale, view.offsetX, view.offsetY);
+    if (cam.zoom > 1) {
+      paintBackdrop(ctx, canvas.width, canvas.height);
+    } else {
+      const sky = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, canvas.height * 0.15,
+        canvas.width / 2, canvas.height / 2, canvas.height * 0.75,
+      );
+      sky.addColorStop(0, '#3a4c92');
+      sky.addColorStop(0.55, '#2a2060');
+      sky.addColorStop(1, '#1c1840');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+    applyWorld();
 
     const shake = state.shake || 0;
     if (shake > 0) {
       ctx.translate(Math.sin(state.time * 43) * shake, Math.cos(state.time * 37) * shake);
     }
 
-    drawGround(ctx, state.time);
+    if (cam.zoom > 1) drawChamber(ctx, state.time);
+    else drawGround(ctx, state.time);
     drawArena(ctx);
     drawWell(ctx, state);
     drawEnemies(ctx, state);
@@ -67,9 +91,13 @@ export function createRenderer(canvas) {
     drawLanternPool(ctx, state);
     drawKeeper(ctx, state.player, state.time);
     drawHalo(ctx, state);
+    drawBursts(ctx, state);
     state.particles.draw(ctx);
-    drawVignette(ctx, state);
+    drawBossMark(ctx, state.boss);
+    drawEnemyMarks(ctx, state);
+    if (cam.zoom === 1) drawVignette(ctx, state);
 
+    ctx.setTransform(view.scale, 0, 0, view.scale, view.offsetX, view.offsetY);
     if (state.flash > 0) {
       ctx.fillStyle = `rgba(255, 236, 190, ${Math.min(0.32, state.flash)})`;
       ctx.fillRect(0, 0, VIEW.width, VIEW.height);
@@ -77,6 +105,7 @@ export function createRenderer(canvas) {
 
     drawChainCallout(ctx, state);
     drawInterface(ctx, state);
+    if (cam.zoom > 1) drawIncoming(ctx, state);
   }
 
   return { draw, resize, clientToWorld, view };
@@ -341,7 +370,7 @@ function drawChainCallout(ctx, state) {
   const text = `CHAIN x${state.combo}!`;
   const pulse = 1 + Math.sin(state.time * 7) * 0.04;
   ctx.save();
-  ctx.translate(ARENA.cx, ARENA.cy - 188);
+  ctx.translate(VIEW.width / 2, 198);
   ctx.scale(pulse, pulse);
   ctx.font = `800 58px ${FONT}`;
   ctx.textAlign = 'center';

@@ -77,6 +77,8 @@ function posePlay(state, player, foes) {
     ['wisp', -2.4, 176, 0.19],
   ];
   const placed = dropMany(foes, swarm, player);
+  trap(placed.wisp0, '#2ee0c4', 'WISPLET');
+  trap(placed.hound0, '#ff4b42', 'HOUND');
   wind(placed.hound0, player, 1, 0.22);
   wind(placed.hound1, player, 2, 0);
   if (placed.hexer0) placed.hexer0.phase = 0.16;
@@ -88,6 +90,7 @@ function posePlay(state, player, foes) {
   throwMotes(state, placed.hexer0, placed.hexer1, player);
   const hit = placed.moth0 || player.body;
   dressHit(state, hit.x, hit.y, ['+95', '+40', '+70']);
+  state.bursts = [{ x: hit.x, y: hit.y, r: 72, color: '255, 176, 48' }];
   state.pulse = 0.26;
 }
 
@@ -135,7 +138,7 @@ function poseBoss(state, player, foes, boss) {
   boss.spin = 0.9;
   boss.hit = 0;
   boss.x = ARENA.cx - 96;
-  boss.y = ARENA.cy - 88;
+  boss.y = ARENA.cy - 18;
   boss.aim = Math.atan2(player.body.y - boss.y, player.body.x - boss.x);
   player.body.angle = Math.atan2(boss.y - player.body.y, boss.x - player.body.x);
   dashStreak(player, player.body.angle);
@@ -174,6 +177,11 @@ function poseBoss(state, player, foes, boss) {
     ['moth', 2.2, 88, 0.84],
   ];
   const placed = dropMany(foes, swarm, player);
+  trap(placed.wisp0, '#2ee0c4', 'WISPLET');
+  trap(placed.wisp1, '#7af6ff', 'WISPLET');
+  trap(placed.brute0, '#ff6a22', 'BRUTE');
+  trap(placed.hound0, '#ff4b42', 'HOUND');
+  trap(placed.hexer0, '#d4b4ff', 'HEXER');
   wind(placed.hound0, player, 1, 0.28);
   wind(placed.hound1, player, 2, 0);
   wind(placed.hound2, boss, 2, 0);
@@ -193,6 +201,11 @@ function poseBoss(state, player, foes, boss) {
   const hitY = (player.body.y + boss.y) * 0.5 + 16;
   dressHit(state, hitX, hitY, ['+95', '+40', '+120']);
   if (placed.moth1) dressHit(state, placed.moth1.x, placed.moth1.y, ['+70', '+95']);
+  state.bursts = [
+    { x: hitX, y: hitY, r: 88, color: '255, 176, 48' },
+    { x: boss.x, y: boss.y, r: 70, color: '196, 150, 255' },
+  ];
+  if (placed.moth1) state.bursts.push({ x: placed.moth1.x, y: placed.moth1.y, r: 52, color: '255, 106, 34' });
   if (placed.brute0) ring(state, placed.brute0.x, placed.brute0.y, 10, 80, '#ff6a22', 'ember', 3.4);
   ring(state, boss.x, boss.y, 16, 110, '#d7ccff', 'spark', 3.4);
   ring(state, ARENA.cx, ARENA.cy, 14, 60, '#ffe14a', 'ember', 3);
@@ -441,6 +454,12 @@ function ring(state, x, y, count, speed, color, kind, size) {
       drag: 1.1,
     });
   }
+}
+
+function trap(enemy, color, label) {
+  if (!enemy) return;
+  enemy.snare = color;
+  enemy.label = label;
 }
 
 function dashStreak(player, angle) {

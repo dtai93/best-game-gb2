@@ -501,6 +501,14 @@ function drawShards(ctx, boss, time) {
   for (let i = 0; i < boss.shards.length; i += 1) {
     const shard = boss.shards[i];
     if (!shard.alive) continue;
+    const speed = Math.hypot(shard.vx, shard.vy) || 1;
+    ctx.strokeStyle = 'rgba(230, 214, 255, 0.9)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(shard.x, shard.y);
+    ctx.lineTo(shard.x - (shard.vx / speed) * 40, shard.y - (shard.vy / speed) * 40);
+    ctx.stroke();
     ctx.save();
     ctx.translate(shard.x, shard.y);
     ctx.rotate(time * 4 + i);

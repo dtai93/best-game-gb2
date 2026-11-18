@@ -184,3 +184,13 @@ The boss cover right-aligned the node name and then drew `WAVE` with that align,
 
 Do not bind port 8790.
 
+### Session 13 — frame fill and fight markers
+
+Play and pause zoom the camera (`camera.js`, 1.32) so the round arena fills a 1024×640 frame. The HUD stays in view space, on top of the floor. `chamber.js` replaces the purple side margins with brick walls, a flagstone lip, merlons, braziers, lantern posts, moss, rubble, and roots. The letterbox bars use the same brick.
+
+`markers.js` draws the crown's health ring and name plate, coloured snare rings, enemy name tags (and YOU), impact glows, and an INCOMING type strip under the boss panel. Tags that would sit on a HUD panel or the chain banner are skipped. Bolt, mote, and shard trails are longer. The boss pose sets the crown beside the well so the banner, the ring, and the score pops stay apart.
+
+Recaptured `01-boss.jpg` on port 18811 (8790 is still the egress tunnel) through `shot.mjs` at 1024×640, then Pillow JPEG quality 88. The file is 211362 bytes. The cover shows brick to the frame edge, the full HUD, the crown ring and name, snares, name tags, the incoming strip, trails, score pops, and the chain callout. `vendor/makefun-game.ts` is unchanged.
+
+Do not bind port 8790.
+

@@ -82,16 +82,24 @@ export function drawBolts(ctx, state) {
     if (speed > 8) {
       const tx = bolt.vx / speed;
       const ty = bolt.vy / speed;
-      const tail = 32;
+      const tail = 78;
       const grad = ctx.createLinearGradient(bolt.x - tx * tail, bolt.y - ty * tail, bolt.x, bolt.y);
       grad.addColorStop(0, 'rgba(255, 120, 24, 0)');
-      grad.addColorStop(1, 'rgba(255, 226, 150, 0.95)');
+      grad.addColorStop(1, 'rgba(255, 236, 170, 0.98)');
       ctx.strokeStyle = grad;
-      ctx.lineWidth = bolt.radius * 1.8;
+      ctx.lineWidth = bolt.radius * 2.4;
       ctx.beginPath();
       ctx.moveTo(bolt.x - tx * tail, bolt.y - ty * tail);
       ctx.lineTo(bolt.x, bolt.y);
       ctx.stroke();
+      for (let g = 1; g <= 4; g += 1) {
+        ctx.globalAlpha = 0.45 - g * 0.08;
+        ctx.fillStyle = g % 2 ? '#fff6c4' : '#ffb01a';
+        ctx.beginPath();
+        ctx.arc(bolt.x - tx * g * 16, bolt.y - ty * g * 16, Math.max(1.5, bolt.radius - g * 0.6), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
     }
     ctx.fillStyle = 'rgba(255, 170, 40, 0.4)';
     ctx.beginPath();

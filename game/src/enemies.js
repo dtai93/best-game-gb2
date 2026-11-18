@@ -132,13 +132,23 @@ export function drawEnemies(ctx, state) {
     const mote = motes[i];
     if (!mote.alive) continue;
     const speed = Math.hypot(mote.vx, mote.vy) || 1;
-    ctx.strokeStyle = 'rgba(214, 180, 255, 0.85)';
-    ctx.lineWidth = 3;
+    const tx = mote.vx / speed;
+    const ty = mote.vy / speed;
+    ctx.strokeStyle = 'rgba(214, 180, 255, 0.9)';
+    ctx.lineWidth = 4;
     ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(mote.x, mote.y);
-    ctx.lineTo(mote.x - (mote.vx / speed) * 18, mote.y - (mote.vy / speed) * 18);
+    ctx.lineTo(mote.x - tx * 52, mote.y - ty * 52);
     ctx.stroke();
+    for (let g = 1; g <= 3; g += 1) {
+      ctx.globalAlpha = 0.4 - g * 0.08;
+      ctx.fillStyle = '#f0e4ff';
+      ctx.beginPath();
+      ctx.arc(mote.x - tx * g * 14, mote.y - ty * g * 14, 4 - g * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
     ctx.save();
     ctx.translate(mote.x, mote.y);
     ctx.fillStyle = 'rgba(180, 120, 255, 0.45)';

@@ -3,6 +3,9 @@
 import { ARENA } from './config.js';
 import { spawnShade } from './enemies.js';
 import { beginBoss } from './boss.js';
+import { evaluateFeats, featTally } from './feats.js';
+import { gradeRun } from './records.js';
+import { nextFork } from './route.js';
 import { nightBeats } from './waves.js';
 import { UPGRADES } from './upgrades.js';
 
@@ -13,7 +16,28 @@ export function poseShot(name, state, player, foes, boss) {
   else if (name === 'boss') poseBoss(state, player, foes, boss);
   else if (name === 'upgrade') poseUpgrade(state, player);
   else if (name === 'end' || name === 'dawn') poseEnd(state, player);
-  else state.screen = 'title';
+  else poseStart(state);
+}
+
+function poseStart(state) {
+  state.screen = 'title';
+  state.time = 0.55;
+  state.best = 18640;
+  state.difficulty = 'journeyman';
+  state.diffName = 'Journeyman';
+  state.profile = {
+    embers: 186,
+    difficulty: 'journeyman',
+    unlocks: { wick: true, lens: true, boots: true, purse: true },
+    feats: { spark: 3, chain: 1, quiet: 2, cup: 1, crown: 1, hoard: 1 },
+    records: [
+      { grade: 'S', score: 18640, night: 8, chain: 11, oil: 46, difficulty: 'journeyman' },
+      { grade: 'A', score: 12480, night: 8, chain: 8, oil: 22, difficulty: 'journeyman' },
+      { grade: 'B', score: 9020, night: 8, chain: 6, oil: 11, difficulty: 'apprentice' },
+      { grade: 'C', score: 4310, night: 6, chain: 4, oil: 0, difficulty: 'master' },
+      { grade: 'D', score: 1880, night: 3, chain: 2, oil: 0, difficulty: 'master' },
+    ],
+  };
 }
 
 function posePlay(state, player, foes) {
@@ -76,9 +100,24 @@ function poseBoss(state, player, foes, boss) {
   state.heat = 0.58;
   state.special = 0.9;
   state.embers = 86;
+  state.combo = 8;
   const beats = nightBeats(8);
   state.surge = { sent: beats, total: beats };
-  state.loadout.ranks = { wick: 2, ward: 1, glass: 2, bell: 1, cloak: 1 };
+  state.loadout.ranks = { wick: 2, ward: 1, glass: 2, bell: 1, cloak: 1, fan: 2 };
+  state.node = { night: 8, type: 'boss', name: 'Boss' };
+  state.route = {
+    index: 7,
+    nights: [
+      { night: 1, type: 'fight' },
+      { night: 2, options: ['cache', 'fight'], pick: 0 },
+      { night: 3, options: ['elite', 'rest'], pick: 0 },
+      { night: 4, options: ['rest', 'fight'], pick: 0 },
+      { night: 5, options: ['cache', 'elite'], pick: 0 },
+      { night: 6, options: ['elite', 'cache'], pick: 0 },
+      { night: 7, options: ['fight', 'rest'], pick: 1 },
+      { night: 8, type: 'boss' },
+    ],
+  };
   const px = ARENA.cx + 124;
   const py = ARENA.cy + 76;
   player.reset(px, py);
@@ -120,6 +159,19 @@ function poseBoss(state, player, foes, boss) {
     ['wisp', -2.5, 185, 0.88],
     ['hound', 3.9, 185, 0.46],
     ['moth', -1.05, 165, 0.25],
+    ['moth', 0.2, 248, 0.31],
+    ['moth', 1.05, 96, 0.57],
+    ['moth', 3.55, 158, 0.22],
+    ['moth', 4.35, 198, 0.64],
+    ['moth', 5.1, 172, 0.41],
+    ['moth', -1.55, 228, 0.73],
+    ['hound', 1.65, 248, 0.29],
+    ['hound', 4.7, 220, 0.52],
+    ['brute', -1.9, 236, 0.18],
+    ['wisp', 2.05, 128, 0.77],
+    ['wisp', 3.7, 112, 0.36],
+    ['hexer', 5.4, 236, 0.49],
+    ['moth', 2.2, 88, 0.84],
   ];
   const placed = dropMany(foes, swarm, player);
   wind(placed.hound0, player, 1, 0.28);
@@ -133,19 +185,23 @@ function poseBoss(state, player, foes, boss) {
   if (placed.brute0) placed.brute0.hp = 4;
   if (placed.brute1) placed.brute1.hp = 6;
   if (placed.hexer0) placed.hexer0.hp = 2;
-  fanBolts(state, player, 8);
+  fanBolts(state, player, 14);
   throwMotes(state, placed.hexer0, placed.hexer1, player);
+  if (placed.hexer2) throwMotes(state, placed.hexer2, null, player);
   armShards(boss, player);
   const hitX = (player.body.x + boss.x) * 0.5 + 20;
   const hitY = (player.body.y + boss.y) * 0.5 + 16;
   dressHit(state, hitX, hitY, ['+95', '+40', '+120']);
-  ring(state, boss.x, boss.y, 12, 90, '#d7ccff', 'spark', 3.2);
-  state.pulse = 0.24;
+  if (placed.moth1) dressHit(state, placed.moth1.x, placed.moth1.y, ['+70', '+95']);
+  if (placed.brute0) ring(state, placed.brute0.x, placed.brute0.y, 10, 80, '#ff6a22', 'ember', 3.4);
+  ring(state, boss.x, boss.y, 16, 110, '#d7ccff', 'spark', 3.4);
+  ring(state, ARENA.cx, ARENA.cy, 14, 60, '#ffe14a', 'ember', 3);
+  state.pulse = 0.34;
 }
 
 function poseUpgrade(state, player) {
   state.screen = 'upgrade';
-  state.night = 4;
+  state.night = 3;
   state.score = 6420;
   state.best = 9800;
   state.combo = 2;
@@ -153,10 +209,26 @@ function poseUpgrade(state, player) {
   state.heat = 0.12;
   state.special = 0.4;
   state.embers = 34;
-  state.surge = { sent: nightBeats(4), total: nightBeats(4) };
+  state.surge = { sent: nightBeats(3), total: nightBeats(3) };
   state.loadout.ranks = { wick: 1, glass: 1, cloak: 1 };
   state.loadout.offer = [gift('fan'), gift('halo'), gift('cloak')];
   state.loadout.hover = 1;
+  state.roadSide = 0;
+  state.route = {
+    index: 2,
+    nights: [
+      { night: 1, type: 'fight' },
+      { night: 2, options: ['fight', 'cache'], pick: 0 },
+      { night: 3, type: 'elite' },
+      { night: 4, options: ['elite', 'rest'], pick: -1 },
+      { night: 5, options: ['cache', 'fight'], pick: 0 },
+      { night: 6, options: ['rest', 'elite'], pick: 0 },
+      { night: 7, options: ['elite', 'cache'], pick: 0 },
+      { night: 8, type: 'boss' },
+    ],
+  };
+  state.road = nextFork(state.route);
+  state.node = { night: 3, type: 'elite', name: 'Elite' };
   player.reset(ARENA.cx, ARENA.cy + 206);
   player.body.angle = -Math.PI / 2;
   const sparks = state.particles;
@@ -183,6 +255,7 @@ function poseEnd(state, player) {
   state.screen = 'end';
   state.outcome = 'dawn';
   state.night = 8;
+  state.time = 754;
   state.score = 18640;
   state.best = 18640;
   state.combo = 6;
@@ -190,8 +263,35 @@ function poseEnd(state, player) {
   state.oil = 0.46;
   state.heat = 0.08;
   state.special = 0.55;
+  state.difficulty = 'journeyman';
   state.loadout.ranks = {
-    wick: 2, reservoir: 1, ward: 1, glass: 2, fan: 1, bell: 1, cloak: 1,
+    wick: 2, reservoir: 1, ward: 1, glass: 2, fan: 1, bell: 1,
+  };
+  state.run = {
+    kills: 128,
+    bestChain: 11,
+    cleanNights: 1,
+    fatNights: 0,
+    nightHurt: false,
+    damage: 0.54,
+    sawElite: true,
+    sawRest: false,
+  };
+  state.feats = evaluateFeats(state);
+  state.featTally = featTally(state.feats);
+  state.grade = gradeRun(state);
+  state.profile = {
+    embers: 282,
+    difficulty: 'journeyman',
+    unlocks: { wick: true, lens: true },
+    feats: { spark: 4, chain: 1, quiet: 2, crown: 1, hoard: 1, taught: 1 },
+    records: [
+      { grade: 'S', score: 18640, night: 8, chain: 11, oil: 46, difficulty: 'journeyman' },
+      { grade: 'A', score: 12480, night: 8, chain: 8, oil: 22, difficulty: 'journeyman' },
+      { grade: 'B', score: 9020, night: 8, chain: 6, oil: 11, difficulty: 'apprentice' },
+      { grade: 'C', score: 4310, night: 6, chain: 4, oil: 0, difficulty: 'master' },
+      { grade: 'D', score: 1880, night: 3, chain: 2, oil: 0, difficulty: 'master' },
+    ],
   };
   player.reset(ARENA.cx + 210, ARENA.cy + 120);
   player.body.angle = -2.4;
@@ -267,11 +367,13 @@ function fanBolts(state, player, count) {
 
 function throwMotes(state, hexerA, hexerB, player) {
   const sources = [hexerA, hexerB];
+  const motes = state.motes || [];
   let slot = 0;
+  while (slot < motes.length && motes[slot].alive) slot += 1;
   for (let s = 0; s < sources.length; s += 1) {
     const hexer = sources[s];
     if (!hexer) continue;
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 4; i += 1) {
       const mote = state.motes && state.motes[slot];
       slot += 1;
       if (!mote) return;
@@ -289,7 +391,7 @@ function throwMotes(state, hexerA, hexerB, player) {
 
 function armShards(boss, player) {
   const aim = Math.atan2(player.body.y - boss.y, player.body.x - boss.x);
-  for (let i = 0; i < 6; i += 1) {
+  for (let i = 0; i < 8; i += 1) {
     const shard = boss.shards && boss.shards[i];
     if (!shard) return;
     const spread = (i - 2.5) * 0.18;

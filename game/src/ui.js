@@ -1,6 +1,10 @@
 /** Title, HUD, pause, the three upgrade cards, and the dawn and dark screens. */
 
 import { BOSS, FONT, NIGHTS, PALETTE, VIEW } from './config.js';
+import { drawDawnScreen } from './dawn-screen.js';
+import { drawNightScreen } from './night-screen.js';
+import { routeMarks } from './route.js';
+import { drawTitleScreen } from './title-screen.js';
 import { UPGRADES } from './upgrades.js';
 
 export const SCREEN_TITLE = 'title';
@@ -8,20 +12,6 @@ export const SCREEN_PLAY = 'play';
 export const SCREEN_PAUSED = 'paused';
 export const SCREEN_UPGRADE = 'upgrade';
 export const SCREEN_END = 'end';
-
-const CARDS = [
-  { x: 168, y: 188, w: 292, h: 340 },
-  { x: 494, y: 188, w: 292, h: 340 },
-  { x: 820, y: 188, w: 292, h: 340 },
-];
-
-export function upgradeIndexAt(x, y) {
-  for (let i = 0; i < CARDS.length; i += 1) {
-    const card = CARDS[i];
-    if (x >= card.x && x <= card.x + card.w && y >= card.y && y <= card.y + card.h) return i;
-  }
-  return -1;
-}
 
 export function drawInterface(ctx, state) {
   const screen = state.screen;
@@ -47,7 +37,7 @@ function drawNightPanel(ctx, state) {
   const x = 12;
   const y = 12;
   const w = 372;
-  const h = 184;
+  const h = 196;
   panel(ctx, x, y, w, h);
   const left = x + 16;
   ctx.textBaseline = 'middle';
@@ -63,10 +53,17 @@ function drawNightPanel(ctx, state) {
   ctx.font = `800 28px ${FONT}`;
   ctx.fillStyle = PALETTE.text;
   ctx.fillText(`${state.night} / ${NIGHTS}`, left + realmW + nightW + 22, y + 28);
+  if (state.route && state.node && state.node.name) {
+    ctx.textAlign = 'right';
+    ctx.font = `800 16px ${FONT}`;
+    ctx.fillStyle = PALETTE.ember;
+    ctx.fillText(state.node.name.toUpperCase(), x + w - 16, y + 28);
+  }
 
   const surge = state.surge || { sent: 0, total: 1 };
   const total = surge.total > 0 ? surge.total : 1;
   const sent = Math.max(0, Math.min(total, surge.sent || 0));
+  ctx.textAlign = 'left';
   ctx.font = `800 16px ${FONT}`;
   ctx.fillStyle = PALETTE.teal;
   ctx.fillText('WAVE', left, y + 62);
@@ -75,8 +72,8 @@ function drawNightPanel(ctx, state) {
   ctx.fillStyle = PALETTE.text;
   ctx.fillText(`${sent}/${total}`, x + w - 16, y + 62);
 
-  drawWinLose(ctx, left, y + 80, w - 32);
-  drawRoute(ctx, left + 10, y + 160, w - 52, state.night);
+  drawWinLose(ctx, left, y + 78, w - 32);
+  drawRoute(ctx, left + 8, y + 166, w - 48, state);
 }
 
 function drawWinLose(ctx, x, y, w) {
@@ -107,9 +104,11 @@ function chip(ctx, x, y, text, fill, ink) {
   ctx.fillText(text, x + 29, y + 12);
 }
 
-function drawRoute(ctx, x, y, w, night) {
-  ctx.strokeStyle = 'rgba(255, 214, 160, 0.4)';
-  ctx.lineWidth = 3;
+function drawRoute(ctx, x, y, w, state) {
+  const night = state.night || 1;
+  const marks = state.route ? routeMarks(state.route) : null;
+  ctx.strokeStyle = 'rgba(255, 214, 160, 0.9)';
+  ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.moveTo(x, y);
   ctx.lineTo(x + w, y);
@@ -123,14 +122,25 @@ function drawRoute(ctx, x, y, w, night) {
       drawCrownNode(ctx, px, y, done || current);
       continue;
     }
+    const type = marks ? marks[i] : null;
     ctx.beginPath();
-    ctx.arc(px, y, current ? 9 : 7, 0, Math.PI * 2);
-    ctx.fillStyle = done || current ? PALETTE.lantern : 'rgba(16, 10, 8, 0.9)';
+    ctx.arc(px, y, current ? 11 : 8, 0, Math.PI * 2);
+    ctx.fillStyle = routeFill(type, done, current);
     ctx.fill();
     ctx.lineWidth = current ? 3 : 2;
     ctx.strokeStyle = current ? '#fff6c4' : done ? '#ffd27a' : 'rgba(255, 214, 160, 0.55)';
     ctx.stroke();
   }
+}
+
+function routeFill(type, done, current) {
+  if (!type || type === 'ahead' || !(done || current)) {
+    return done || current ? PALETTE.lantern : 'rgba(16, 10, 8, 0.9)';
+  }
+  if (type === 'elite') return PALETTE.danger;
+  if (type === 'cache') return PALETTE.ember;
+  if (type === 'rest') return PALETTE.teal;
+  return PALETTE.lantern;
 }
 
 function drawCrownNode(ctx, x, y, live) {
@@ -228,7 +238,7 @@ function drawGiftPanel(ctx, state) {
   ctx.textAlign = 'left';
   ctx.font = `800 16px ${FONT}`;
   ctx.fillStyle = PALETTE.text;
-  ctx.fillText('RUN GIFTS', x + 16, y + 24);
+  ctx.fillText('RUN UPGRADES', x + 16, y + 24);
   ctx.textAlign = 'right';
   ctx.fillStyle = PALETTE.lantern;
   ctx.fillText(`${owned.length}/${UPGRADES.length}`, x + w - 16, y + 24);
@@ -506,59 +516,8 @@ function grouped(value) {
 }
 
 function drawTitle(ctx, state) {
-  const cx = VIEW.width / 2;
-  veil(ctx, 0.48);
-  const glow = ctx.createRadialGradient(cx, 196, 8, cx, 200, 230);
-  glow.addColorStop(0, 'rgba(255, 176, 58, 0.32)');
-  glow.addColorStop(1, 'rgba(255, 176, 58, 0)');
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(cx, 198, 230, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = PALETTE.text;
-  ctx.font = `68px ${FONT}`;
-  ctx.fillText('Ashwell', cx, 198);
-  ctx.fillStyle = PALETTE.lantern;
-  ctx.font = `24px ${FONT}`;
-  ctx.fillText('Lantern of the Last Well', cx, 242);
-  drawNightMarks(ctx, cx, 286);
-  ctx.fillStyle = PALETTE.ash;
-  ctx.font = `18px ${FONT}`;
-  ctx.fillText('Guard the well for eight nights. Choose a gift between them.', cx, 340);
-  ctx.fillText('Dawn if the lantern still burns. Dark if the oil runs out.', cx, 368);
-  ctx.fillStyle = PALETTE.muted;
-  ctx.fillText('WASD move · mouse aim · click fire · Shift dash · F pulse', cx, 414);
-  ctx.fillText('Esc pause · M mute · R title', cx, 440);
-  const pulse = 0.78 + 0.22 * Math.sin(state.time * 3);
-  ctx.globalAlpha = pulse;
-  ctx.fillStyle = PALETTE.text;
-  ctx.font = `20px ${FONT}`;
-  ctx.fillText('Enter, Space, or click to begin', cx, 492);
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = PALETTE.lantern;
-  ctx.font = `18px ${FONT}`;
-  ctx.fillText(`Best ${state.best}`, cx, 534);
-}
-
-function drawNightMarks(ctx, cx, y) {
-  const gap = 28;
-  const start = cx - ((NIGHTS - 1) * gap) / 2;
-  for (let i = 0; i < NIGHTS; i += 1) {
-    const x = start + i * gap;
-    const crown = i === NIGHTS - 1;
-    ctx.beginPath();
-    ctx.arc(x, y, crown ? 7 : 5, 0, Math.PI * 2);
-    ctx.fillStyle = crown ? '#2a1830' : PALETTE.stone;
-    ctx.fill();
-    ctx.lineWidth = i === 0 || crown ? 2 : 1;
-    ctx.strokeStyle = crown ? PALETTE.danger : i === 0 ? PALETTE.lantern : PALETTE.stoneLight;
-    ctx.stroke();
-  }
-  ctx.font = `14px ${FONT}`;
-  ctx.fillStyle = PALETTE.muted;
-  ctx.textAlign = 'center';
-  ctx.fillText('Eight nights. The last wears the Crown.', cx, y + 22);
+  veil(ctx, 0.58);
+  drawTitleScreen(ctx, state);
 }
 
 function drawPause(ctx) {
@@ -573,164 +532,16 @@ function drawPause(ctx) {
 }
 
 function drawUpgrade(ctx, state) {
-  veil(ctx, 0.22);
-  const glow = ctx.createRadialGradient(VIEW.width / 2, 300, 40, VIEW.width / 2, 320, 460);
-  glow.addColorStop(0, 'rgba(255, 186, 70, 0.28)');
-  glow.addColorStop(1, 'rgba(255, 186, 70, 0)');
-  ctx.fillStyle = glow;
-  ctx.beginPath();
-  ctx.arc(VIEW.width / 2, 320, 460, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = PALETTE.dawn;
-  ctx.font = `800 32px ${FONT}`;
-  ctx.fillText(`Night ${state.night} is quiet`, VIEW.width / 2, 78);
-  ctx.fillStyle = PALETTE.text;
-  ctx.font = `700 20px ${FONT}`;
-  ctx.fillText('The well offers three gifts. Take one.', VIEW.width / 2, 116);
-  const offer = state.loadout.offer;
-  for (let i = 0; i < CARDS.length; i += 1) {
-    drawCard(ctx, CARDS[i], offer[i], i, state.loadout.hover === i, state);
-  }
-  ctx.fillStyle = PALETTE.text;
-  ctx.font = `800 18px ${FONT}`;
-  ctx.fillText('1   2   3    or click a card    ·    Enter confirms    ·    R title', VIEW.width / 2, 668);
-}
-
-function drawCard(ctx, rect, card, index, hot, state) {
-  roundBox(ctx, rect.x, rect.y, rect.w, rect.h, 18);
-  ctx.fillStyle = hot ? 'rgba(92, 58, 18, 0.94)' : 'rgba(48, 32, 22, 0.9)';
-  ctx.fill();
-  ctx.strokeStyle = hot ? PALETTE.lantern : '#f0c48a';
-  ctx.lineWidth = hot ? 4 : 2;
-  ctx.stroke();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = PALETTE.lantern;
-  ctx.font = `800 22px ${FONT}`;
-  ctx.fillText(String(index + 1), rect.x + 36, rect.y + 36);
-  if (!card) return;
-  drawGiftIcon(ctx, card.id, rect.x + rect.w / 2, rect.y + 78);
-  ctx.fillStyle = PALETTE.text;
-  ctx.font = `800 26px ${FONT}`;
-  wrapText(ctx, card.name, rect.x + rect.w / 2, rect.y + 124, rect.w - 36, 32);
-  ctx.fillStyle = '#ffe6c4';
-  ctx.font = `700 18px ${FONT}`;
-  wrapText(ctx, card.line, rect.x + rect.w / 2, rect.y + 196, rect.w - 40, 24);
-  const rank = state.loadout.ranks[card.id] || 0;
-  ctx.fillStyle = rank > 0 ? PALETTE.lantern : PALETTE.dawn;
-  ctx.font = `800 18px ${FONT}`;
-  ctx.fillText(rank > 0 ? `Taken ${rank}` : 'New gift', rect.x + rect.w / 2, rect.y + rect.h - 36);
-  ctx.textBaseline = 'alphabetic';
+  veil(ctx, 0.46);
+  drawNightScreen(ctx, state);
 }
 
 function drawEnding(ctx, state) {
-  const won = state.outcome === 'dawn';
-  veil(ctx, won ? 0.24 : 0.58);
-  if (won) {
-    const glow = ctx.createRadialGradient(VIEW.width / 2, 250, 20, VIEW.width / 2, 280, 480);
-    glow.addColorStop(0, 'rgba(255, 214, 120, 0.5)');
-    glow.addColorStop(1, 'rgba(255, 180, 60, 0)');
-    ctx.fillStyle = glow;
-    ctx.beginPath();
-    ctx.arc(VIEW.width / 2, 280, 480, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  const cx = VIEW.width / 2;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = won ? '#fff1c2' : PALETTE.danger;
-  ctx.font = `800 64px ${FONT}`;
-  ctx.fillText(won ? 'DAWN' : 'DARK', cx, 78);
-  ctx.fillStyle = PALETTE.text;
-  ctx.font = `700 20px ${FONT}`;
-  ctx.fillText(
-    won ? 'The Unlit Crown breaks. The lantern holds until morning.' : 'The oil is gone. The stones go quiet.',
-    cx,
-    124,
-  );
-
-  const rows = [
-    ['SCORE', grouped(state.score), PALETTE.text],
-    ['BEST', grouped(state.best), PALETTE.dawn],
-    ['NIGHTS', `${state.night} / ${NIGHTS}`, PALETTE.teal],
-    ['CHAIN', `x${state.combo || 0}`, PALETTE.lantern],
-    ['EMBERS', grouped(state.embers || 0), PALETTE.ember],
-    ['GIFTS', `${ownedGifts(state).length} / ${UPGRADES.length}`, PALETTE.ash],
-    ['OIL', `${Math.round((state.oil || 0) * 100)}%`, state.oil > 0.2 ? PALETTE.lantern : PALETTE.danger],
-  ];
-  const w = 560;
-  const x = cx - w / 2;
-  const y = 156;
-  const h = 46 + rows.length * 42;
-  panel(ctx, x, y, w, h);
-  for (let i = 0; i < rows.length; i += 1) {
-    const rowY = y + 36 + i * 42;
-    const [name, value, color] = rows[i];
-    ctx.textAlign = 'left';
-    ctx.font = `800 18px ${FONT}`;
-    ctx.fillStyle = PALETTE.muted;
-    ctx.fillText(name, x + 28, rowY);
-    ctx.textAlign = 'right';
-    ctx.font = `800 ${i === 0 ? 32 : 22}px ${FONT}`;
-    ctx.fillStyle = color;
-    const valueW = ctx.measureText(value).width;
-    ctx.fillText(value, x + w - 28, rowY);
-    if (won && i === 1 && state.score >= state.best && state.score > 0) {
-      ctx.font = `800 14px ${FONT}`;
-      const tag = 'NEW BEST';
-      const tagW = ctx.measureText(tag).width + 16;
-      const tagX = x + w - 28 - valueW - 14 - tagW;
-      roundBox(ctx, tagX, rowY - 12, tagW, 24, 8);
-      ctx.fillStyle = PALETTE.lantern;
-      ctx.fill();
-      ctx.fillStyle = '#1c120c';
-      ctx.textAlign = 'center';
-      ctx.fillText(tag, tagX + tagW / 2, rowY);
-    }
-  }
-
-  const cap = 'ENTER';
-  ctx.font = `800 18px ${FONT}`;
-  const capW = ctx.measureText(cap).width + 22;
-  const label = 'RESTART';
-  const labelW = ctx.measureText(label).width;
-  const total = capW + 12 + labelW;
-  const capX = cx - total / 2;
-  const capY = y + h + 28;
-  roundBox(ctx, capX, capY, capW, 36, 8);
-  ctx.fillStyle = '#fff3d6';
-  ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = '#24160e';
-  ctx.stroke();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#1c120c';
-  ctx.fillText(cap, capX + capW / 2, capY + 18);
-  ctx.textAlign = 'left';
-  ctx.fillStyle = PALETTE.text;
-  ctx.fillText(label, capX + capW + 12, capY + 18);
-  ctx.textBaseline = 'alphabetic';
+  veil(ctx, state.outcome === 'dawn' ? 0.48 : 0.72);
+  drawDawnScreen(ctx, state);
 }
 
 function veil(ctx, alpha) {
-  ctx.fillStyle = `rgba(7, 9, 16, ${alpha})`;
+  ctx.fillStyle = `rgba(5, 7, 12, ${alpha})`;
   ctx.fillRect(0, 0, VIEW.width, VIEW.height);
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  let cursor = y;
-  for (let i = 0; i < words.length; i += 1) {
-    const trial = line ? `${line} ${words[i]}` : words[i];
-    if (line && ctx.measureText(trial).width > maxWidth) {
-      ctx.fillText(line, x, cursor);
-      line = words[i];
-      cursor += lineHeight;
-    } else {
-      line = trial;
-    }
-  }
-  if (line) ctx.fillText(line, x, cursor);
 }

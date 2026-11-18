@@ -80,6 +80,11 @@ export function resetBoss(boss) {
 export function beginBoss(boss, state) {
   resetBoss(boss);
   boss.active = true;
+  const cut = state && state.bossCut > 0 && state.bossCut < 1 ? state.bossCut : 1;
+  if (cut < 1) {
+    boss.maxHp = Math.max(40, Math.round(BOSS.hp * cut));
+    boss.hp = boss.maxHp;
+  }
   boss.mode = 'arrive';
   boss.timer = 1.25;
   boss.invuln = 1.25;

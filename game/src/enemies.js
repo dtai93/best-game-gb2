@@ -15,7 +15,7 @@ export function createEnemies() {
   for (let i = 0; i < MOTE_POOL; i += 1) {
     motes.push({ alive: false, x: 0, y: 0, vx: 0, vy: 0, life: 0 });
   }
-  return { list, motes };
+  return { list, motes, pace: 1, bounty: 1 };
 }
 
 export function resetEnemies(foes) {
@@ -48,9 +48,9 @@ export function spawnShade(foes, type, angle, salt) {
   enemy.radius = stats.radius;
   enemy.hp = stats.hp;
   enemy.maxHp = stats.hp;
-  enemy.speed = stats.speed;
+  enemy.speed = stats.speed * (foes.pace > 0 ? foes.pace : 1);
   enemy.resist = stats.resist;
-  enemy.bounty = stats.bounty;
+  enemy.bounty = Math.round(stats.bounty * (foes.bounty > 0 ? foes.bounty : 1));
   enemy.hit = 0;
   enemy.phase = type === 'hexer' ? 0.7 + salt * 2.2 : salt * 3;
   enemy.mode = 0;

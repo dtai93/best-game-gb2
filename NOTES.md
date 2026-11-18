@@ -154,3 +154,33 @@ Do not bind port 8790.
 
 Do not bind port 8790.
 
+### Session 11 — meta systems
+
+Added `meta.js`, `route.js`, `feats.js`, `records.js`, and `meta-ui.js`.
+
+Difficulty is Apprentice, Journeyman, or Master. Each changes shade count, shade speed, starting oil, and oil burn. The title cycles it with A/D or a click, and the choice is stored on the profile.
+
+Eight permanent unlocks (Spare Wick, Keen Lens, Ash Boots, Ember Purse, Short Cloak, First Bell, Cache Map, Crown Omen) are bought with banked embers. Keys 1–8 or a click on the workshop. Each one changes the next run: burn and oil, dart damage, move speed, ember drops, dash cooldown, starting halo, cache payouts, or the Crown's hit points. The profile is `localStorage` key `ashwell.lantern.meta`. The old best-score key is unchanged.
+
+A run is a road of eight nights. Night 1 is a fight and night 8 is the Crown. Nights 2–7 are a seeded fork. After the gift, the player picks the next node. Elite nights spawn more, faster, richer shades. Cache nights are shorter and pay oil and embers. Rest nights skip the fight and refill oil and embers. The Crown still holds the dawn.
+
+Eight feats are judged when the run ends (kill, chain of 8, clean night, high oil, crown, 40 embers, four gifts, elite plus rest). The letter grade and the top five scores are kept on the profile, and the run's embers join the wallet. Quitting to the title does not bank.
+
+The play HUD names the current node and colors finished nights. Shot poses still leave the route empty, so the cover HUD is unchanged. Gift cards still show when `state.gate` is `gift`.
+
+Check: node imports of the new modules (difficulty math, unlock purchase, route forks, elite spawn count and speed, rest spawn of zero, all eight feats, top-five records). Headless Chrome on `/` and `?shot=play|boss|upgrade|dawn&seed=1` on port 18811 (8790 is still the egress tunnel). No page errors. Each shot set `__shotReady`. A started run announced `Night 1. Fight`. The server was killed after.
+
+Do not bind port 8790.
+
+### Session 12 — final check and commit
+
+`node --check` passed on every `game/src/*.js`. Headless Chrome on port 18811 (8790 is still the egress tunnel): `?shot=start&seed=1` and `?shot=play&seed=1` set `__shotReady`, and Enter on `/` started `Night 1. Fight`. No page exceptions. The only console lines were Chrome's favicon 404 and the headless AudioContext autoplay warning.
+
+`shots.json` lists `01-boss.jpg`, `02-title.jpg`, `03-road.jpg`, `04-victory.jpg`. Each file is 1024×640 and under 256 KiB. Title, road, and victory match the dense start, gift-and-road, and grade screens.
+
+The boss cover right-aligned the node name and then drew `WAVE` with that align, so the word sat off the left of the night panel. `drawNightPanel` sets `textAlign` back to `left` before `WAVE`. Recaptured `01-boss.jpg` (1024×640, 140220 bytes). `WAVE`, `3/3`, and `BOSS` all sit inside the panel.
+
+`MAKEFUN_OUTPUT_DIR=/tmp/bgout node main.ts` exited 0 after the recapture. The dossier is 823721 bytes and holds the four JPEGs plus `game/index.html`. `vendor/makefun-game.ts` is unchanged.
+
+Do not bind port 8790.
+

@@ -109,6 +109,10 @@ export function updateWaves(waves, dt, foes, state) {
   if (state.outcome) return null;
   const script = NIGHT_SCRIPTS[state.night - 1];
   if (!script) return null;
+  const node = state.node;
+  const speed = state.threat && state.threat.speed ? state.threat.speed : 1;
+  foes.pace = speed * (node && node.speed ? node.speed : 1);
+  foes.bounty = node && node.bounty ? node.bounty : 1;
   waves.clock += dt;
   while (waves.cursor < script.length && script[waves.cursor].t <= waves.clock) {
     const event = script[waves.cursor];
@@ -131,9 +135,14 @@ export function updateWaves(waves, dt, foes, state) {
 }
 
 function spawnArc(foes, state, type, count, arc) {
+  const threat = state.threat && state.threat.count ? state.threat.count : 1;
+  const nodeCount = state.node && state.node.count != null ? state.node.count : 1;
+  const raw = count * threat * nodeCount;
+  if (raw <= 0) return;
+  const scaled = Math.max(1, Math.round(raw));
   const base = state.rng.float() * Math.PI * 2;
-  for (let i = 0; i < count; i += 1) {
-    const along = count === 1 ? 0 : i / (count - 1);
+  for (let i = 0; i < scaled; i += 1) {
+    const along = scaled === 1 ? 0 : i / (scaled - 1);
     spawnShade(foes, type, base + (along - 0.5) * arc, state.rng.float());
   }
 }

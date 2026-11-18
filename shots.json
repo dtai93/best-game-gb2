@@ -1,6 +1,6 @@
 [
   { "name": "01-boss.jpg", "query": "?shot=boss&seed=1" },
-  { "name": "02-play.jpg", "query": "?shot=play&seed=1" },
-  { "name": "03-upgrade.jpg", "query": "?shot=upgrade&seed=1" },
-  { "name": "04-dawn.jpg", "query": "?shot=dawn&seed=1" }
+  { "name": "02-title.jpg", "query": "?shot=start&seed=1" },
+  { "name": "03-road.jpg", "query": "?shot=upgrade&seed=1" },
+  { "name": "04-victory.jpg", "query": "?shot=dawn&seed=1" }
 ]

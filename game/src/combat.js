@@ -4,6 +4,7 @@ import { strikeBoss } from './boss.js';
 import { ARENA, COMBAT, PALETTE } from './config.js';
 import { strikeShade } from './enemies.js';
 import { circlesOverlap } from './physics.js';
+import { noteChain, noteKill } from './feats.js';
 import { burnOil, refillOil } from './upgrades.js';
 
 const BOLT_POOL = 40;
@@ -313,8 +314,12 @@ function noteHit(combat, state, enemy, result) {
     ? Math.round(enemy.bounty * (1 + chain * 0.18) * worth)
     : Math.round((4 + chain) * worth);
   state.score += gained;
+  if (state.run) noteChain(state.run, state.combo);
   if (kill) {
-    state.embers = (state.embers || 0) + Math.max(1, Math.round((enemy.bounty || 90) / 90));
+    if (state.run) noteKill(state.run, state.combo);
+    const rate = state.emberRate > 0 ? state.emberRate : 1;
+    const drop = Math.max(1, Math.round(((enemy.bounty || 90) / 90) * rate));
+    state.embers = (state.embers || 0) + drop;
     state.special = Math.min(1, state.special + COMBAT.specialKill * state.mods.special);
     refillOil(state, state.mods.oilOnKill);
     if (state.hear) state.hear('kill');

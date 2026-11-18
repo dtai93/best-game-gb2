@@ -67,6 +67,13 @@ export function createInput(canvas, clientToWorld, onGesture) {
   window.addEventListener('pointerup', onUp);
   canvas.addEventListener('contextmenu', onContext);
 
+  function digitDown(codes) {
+    for (let n = 1; n <= 8; n += 1) {
+      if (codes.has(`Digit${n}`) || codes.has(`Numpad${n}`)) return n;
+    }
+    return 0;
+  }
+
   function axis(negative, positive) {
     let value = 0;
     for (const code of negative) if (held.has(code)) value -= 1;
@@ -100,10 +107,12 @@ export function createInput(canvas, clientToWorld, onGesture) {
       restartEdge: pressed.has('KeyR'),
       specialEdge: pressed.has('KeyF') || pressed.has('KeyQ'),
       muteEdge: pressed.has('KeyM'),
+      rerollEdge: pressed.has('KeyB'),
       pickSlot: pressed.has('Digit1') || pressed.has('Numpad1') ? 1
         : pressed.has('Digit2') || pressed.has('Numpad2') ? 2
           : pressed.has('Digit3') || pressed.has('Numpad3') ? 3
             : 0,
+      digit: digitDown(pressed),
       leftTap: pressed.has('ArrowLeft') || pressed.has('KeyA'),
       rightTap: pressed.has('ArrowRight') || pressed.has('KeyD'),
     };

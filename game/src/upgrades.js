@@ -1,6 +1,7 @@
 /** Twelve well-gifts, the three-card offer, and the oil drain and refill rules. */
 
 import { COMBAT, WAVE } from './config.js';
+import { noteBite } from './feats.js';
 
 /**
  * Oil rules:
@@ -32,8 +33,10 @@ export function emptyMods() {
 
 export function drainOil(state, amount) {
   if (amount <= 0) return;
-  const kept = Math.min(0.6, state.mods.oilResist);
-  state.oil -= amount * (1 - kept);
+  const kept = Math.min(0.6, state.mods.oilResist || 0);
+  const lost = amount * (1 - kept);
+  state.oil -= lost;
+  noteBite(state.run, lost);
 }
 
 export function burnOil(state, dt) {
@@ -70,6 +73,16 @@ export function applyUpgrade(state, card) {
   const rank = state.loadout.ranks[card.id] || 0;
   state.loadout.ranks[card.id] = rank + 1;
   card.apply(state.mods);
+}
+
+/** Embers spent to draw three new gifts. The offer only changes when the purse can pay. */
+export const REROLL_COST = 12;
+
+export function rerollOffer(state) {
+  if ((state.embers || 0) < REROLL_COST) return false;
+  state.embers -= REROLL_COST;
+  rollOffer(state);
+  return true;
 }
 
 function catalog() {

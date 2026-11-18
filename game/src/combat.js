@@ -73,16 +73,36 @@ export function updateCombat(combat, dt, state, sample, bites) {
 export function drawBolts(ctx, state) {
   const bolts = state.bolts;
   if (!bolts) return;
+  ctx.lineCap = 'round';
   for (let i = 0; i < bolts.length; i += 1) {
     const bolt = bolts[i];
     if (!bolt.alive) continue;
+    const speed = Math.hypot(bolt.vx, bolt.vy);
+    if (speed > 8) {
+      const tx = bolt.vx / speed;
+      const ty = bolt.vy / speed;
+      const tail = 32;
+      const grad = ctx.createLinearGradient(bolt.x - tx * tail, bolt.y - ty * tail, bolt.x, bolt.y);
+      grad.addColorStop(0, 'rgba(255, 120, 24, 0)');
+      grad.addColorStop(1, 'rgba(255, 226, 150, 0.95)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = bolt.radius * 1.8;
+      ctx.beginPath();
+      ctx.moveTo(bolt.x - tx * tail, bolt.y - ty * tail);
+      ctx.lineTo(bolt.x, bolt.y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255, 170, 40, 0.4)';
+    ctx.beginPath();
+    ctx.arc(bolt.x, bolt.y, bolt.radius * 2.3, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = PALETTE.lantern;
     ctx.beginPath();
-    ctx.arc(bolt.x, bolt.y, bolt.radius, 0, Math.PI * 2);
+    ctx.arc(bolt.x, bolt.y, bolt.radius + 1, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = PALETTE.lanternCore;
     ctx.beginPath();
-    ctx.arc(bolt.x, bolt.y, bolt.radius * 0.45, 0, Math.PI * 2);
+    ctx.arc(bolt.x, bolt.y, bolt.radius * 0.5, 0, Math.PI * 2);
     ctx.fill();
   }
 }
@@ -92,12 +112,17 @@ export function drawHalo(ctx, state) {
   const life = 0.42;
   const grown = 1 - state.pulse / life;
   const radius = 18 + grown * COMBAT.pulseRadius;
+  const alpha = Math.max(0, state.pulse / life);
   ctx.save();
-  ctx.globalAlpha = Math.max(0, state.pulse / life);
-  ctx.strokeStyle = PALETTE.lanternCore;
-  ctx.lineWidth = 4;
+  ctx.globalAlpha = alpha * 0.4;
+  ctx.strokeStyle = PALETTE.lantern;
+  ctx.lineWidth = 10;
   ctx.beginPath();
   ctx.arc(state.player.x, state.player.y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = PALETTE.lanternCore;
+  ctx.lineWidth = 3.5;
   ctx.stroke();
   ctx.restore();
 }
@@ -133,6 +158,19 @@ function stepBolts(combat, dt, state) {
     if (bolt.life <= 0 || rim > (ARENA.radius + 24) ** 2) {
       bolt.alive = false;
       continue;
+    }
+    const bucket = (bolt.life * 14) | 0;
+    if (bolt.ember !== bucket) {
+      bolt.ember = bucket;
+      state.particles.spawn(bolt.x, bolt.y, {
+        vx: -bolt.vx * 0.02,
+        vy: -bolt.vy * 0.02 - 10,
+        life: 0.22,
+        size: 2.3,
+        color: bucket % 2 ? PALETTE.ember : '#ffd27a',
+        kind: 'ember',
+        drag: 3,
+      });
     }
     const speed = Math.hypot(bolt.vx, bolt.vy) || 1;
     const hit = nearestTarget(state, bolt.x, bolt.y, bolt.radius);
@@ -270,26 +308,73 @@ function noteHit(combat, state, enemy, result) {
   combat.chainTimer = COMBAT.chainTime * state.mods.chain;
   const chain = Math.min(state.combo, 24);
   const worth = state.mods.score;
-  if (result === 'kill') {
-    state.score += Math.round(enemy.bounty * (1 + chain * 0.18) * worth);
+  const kill = result === 'kill';
+  const gained = kill
+    ? Math.round(enemy.bounty * (1 + chain * 0.18) * worth)
+    : Math.round((4 + chain) * worth);
+  state.score += gained;
+  if (kill) {
     state.special = Math.min(1, state.special + COMBAT.specialKill * state.mods.special);
     refillOil(state, state.mods.oilOnKill);
     if (state.hear) state.hear('kill');
     state.shake = Math.min(10, state.shake + 3.4);
     state.flash = Math.min(0.5, state.flash + 0.14);
-    puffRing(state, enemy.x, enemy.y, PALETTE.lantern, 8, 90);
+    puffRing(state, enemy.x, enemy.y, PALETTE.lantern, 10, 110);
+    sparkBurst(state, enemy.x, enemy.y, 9, 170);
   } else {
-    state.score += Math.round((4 + chain) * worth);
     state.special = Math.min(1, state.special + COMBAT.specialHit * state.mods.special);
     if (state.hear) state.hear('hit');
     state.shake = Math.min(6, state.shake + 1.1);
     state.flash = Math.min(0.28, state.flash + 0.045);
-    state.particles.spawn(enemy.x, enemy.y, {
-      vx: enemy.ox * 0.2,
-      vy: enemy.oy * 0.2,
-      life: 0.16,
-      size: 2.2,
-      color: PALETTE.lanternCore,
+    sparkBurst(state, enemy.x, enemy.y, 6, 130);
+  }
+  popScore(state, enemy, gained, chain);
+}
+
+function sparkBurst(state, x, y, count, speed) {
+  for (let i = 0; i < count; i += 1) {
+    const angle = (i / count) * Math.PI * 2 + 0.2;
+    state.particles.spawn(x, y, {
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.26,
+      size: 2.8,
+      color: i % 2 ? PALETTE.lantern : PALETTE.lanternCore,
+      kind: 'spark',
+      drag: 2.2,
+    });
+  }
+  state.particles.spawn(x, y, {
+    vy: -24,
+    life: 0.35,
+    size: 4,
+    color: PALETTE.ember,
+    kind: 'ember',
+    drag: 1.5,
+  });
+}
+
+function popScore(state, enemy, gained, chain) {
+  state.particles.spawn(enemy.x, enemy.y - 16, {
+    vy: -48,
+    life: 0.78,
+    size: 0,
+    drag: 1.2,
+    color: '#ffe9a2',
+    text: `+${gained}`,
+    scale: gained >= 100 ? 1.2 : 0.95,
+    kind: 'pop',
+  });
+  if (chain >= 2 && (chain === 2 || chain % 4 === 0)) {
+    state.particles.spawn(enemy.x, enemy.y - 42, {
+      vy: -20,
+      life: 0.85,
+      size: 0,
+      drag: 0.5,
+      color: '#fff3b0',
+      text: `CHAIN x${chain}!`,
+      scale: 1.55,
+      kind: 'pop',
     });
   }
 }

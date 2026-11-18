@@ -119,3 +119,15 @@ Rewrote `main.ts` in Ashwell's own words. It still imports `buildDossier` from `
 `MAKEFUN_OUTPUT_DIR=/tmp/bg2out timeout 120 node main.ts` exited 0. `dossier.json` is 282619 bytes. The four JPEGs are present: `01-cover.jpg`, `02-play.jpg`, `03-boss.jpg`, `04-end.jpg`. `game/index.html` was copied.
 
 This session commits and pushes. Do not bind port 8790.
+
+### Session 8 — play visual punch
+
+Brightened the palette in `config.js` (lantern gold, teal, violet, warm stone) and redrew the arena in `render.js`: stone tiles, mortar, cracks, moss, a gold inner wash, and a gold-plus-teal rim. The well's light pool is a wide gold core with a teal edge, and rising embers. The keeper carries a lantern pool. The edge vignette is lighter so the floor stays readable. Hit flash is a warm wash.
+
+Shades in `enemies.js` have saturated bodies, dark outlines, a tinted glow, and a gold rim toward the well. Motes leave a short trail. Bolts in `combat.js` draw a light streak, a glow, and a core, and drop embers as they fly. Hits throw spark streaks and an ember. Kills still use the puff ring. Score math is unchanged. Each hit spawns a floating `+N` pop. Chain milestones also spawn `CHAIN xN!`. While the combo is at least 2, `drawChainCallout` paints a large gold banner above the well.
+
+`particles.js` draws dots, spark streaks, embers, and stroked text pops. The play pose in `shots.js` returns the shade it places, fills the ring with more silhouettes, aims two bolts, and seeds `+95`, `+40`, sparks, and embers. The crown's body is a brighter violet so it matches the floor.
+
+Check: `?shot=play&seed=1` on port 18811 (8790 is still the egress tunnel). `__shotReady` was set. No console errors or warnings from the page. `02-play.jpg` is 1280×720, 113417 bytes. The other three shots are still the previous captures.
+
+Next session can punch the HUD and recapture. Do not bind port 8790.

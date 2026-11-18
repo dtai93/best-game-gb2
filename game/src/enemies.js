@@ -131,16 +131,35 @@ export function drawEnemies(ctx, state) {
   for (let i = 0; i < motes.length; i += 1) {
     const mote = motes[i];
     if (!mote.alive) continue;
+    const speed = Math.hypot(mote.vx, mote.vy) || 1;
+    ctx.strokeStyle = 'rgba(214, 180, 255, 0.85)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(mote.x, mote.y);
+    ctx.lineTo(mote.x - (mote.vx / speed) * 18, mote.y - (mote.vy / speed) * 18);
+    ctx.stroke();
     ctx.save();
     ctx.translate(mote.x, mote.y);
-    ctx.rotate(state.time * 3 + mote.x * 0.01);
-    ctx.fillStyle = '#b9a6ff';
+    ctx.fillStyle = 'rgba(180, 120, 255, 0.45)';
     ctx.beginPath();
-    ctx.moveTo(0, -6);
-    ctx.lineTo(5, 0);
-    ctx.lineTo(0, 6);
-    ctx.lineTo(-5, 0);
+    ctx.arc(0, 0, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.rotate(state.time * 3 + mote.x * 0.01);
+    ctx.fillStyle = '#e4d2ff';
+    ctx.strokeStyle = '#1a1028';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(0, -7);
+    ctx.lineTo(6, 0);
+    ctx.lineTo(0, 7);
+    ctx.lineTo(-6, 0);
     ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#fff8ff';
+    ctx.beginPath();
+    ctx.arc(0, 0, 2.1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -455,14 +474,36 @@ function drawThreat(ctx, enemy, time) {
   }
 }
 
+function seal(ctx) {
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 3.4;
+  ctx.strokeStyle = '#140c18';
+  ctx.stroke();
+}
+
+function glowOf(type) {
+  if (type === 'moth') return '#c080ff';
+  if (type === 'hound') return '#ff5068';
+  if (type === 'wisp') return '#3dfff0';
+  if (type === 'brute') return '#ffb04a';
+  return '#d2b0ff';
+}
+
 function drawShade(ctx, enemy, time) {
   drawThreat(ctx, enemy, time);
   ctx.save();
   ctx.translate(enemy.x, enemy.y);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+  ctx.fillStyle = 'rgba(20, 10, 8, 0.35)';
   ctx.beginPath();
-  ctx.ellipse(0, enemy.radius * 0.45, enemy.radius * 0.85, enemy.radius * 0.32, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, enemy.radius * 0.55, enemy.radius * 0.9, enemy.radius * 0.32, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.globalAlpha = enemy.ghost ? 0.22 : 0.4;
+  ctx.fillStyle = glowOf(enemy.type);
+  ctx.beginPath();
+  ctx.arc(0, 0, enemy.radius + 8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
   if (enemy.type !== 'wisp' && enemy.type !== 'hexer') ctx.rotate(enemy.angle);
   if (enemy.type === 'moth') drawMoth(ctx, enemy, time);
   else if (enemy.type === 'hound') drawHound(ctx, enemy);
@@ -470,6 +511,17 @@ function drawShade(ctx, enemy, time) {
   else if (enemy.type === 'brute') drawBrute(ctx, enemy);
   else drawHexer(ctx, enemy, time);
   ctx.restore();
+  if (!enemy.ghost) {
+    const dx = ARENA.cx - enemy.x;
+    const dy = ARENA.cy - enemy.y;
+    const aim = Math.atan2(dy, dx);
+    ctx.strokeStyle = 'rgba(255, 228, 170, 0.95)';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(enemy.x, enemy.y, enemy.radius + 3, aim - 0.9, aim + 0.9);
+    ctx.stroke();
+  }
   if (enemy.maxHp > 1) {
     const width = enemy.radius * 2;
     const left = enemy.x - width / 2;
@@ -483,96 +535,148 @@ function drawShade(ctx, enemy, time) {
 
 function drawMoth(ctx, enemy, time) {
   const flap = Math.sin(time * 22 + enemy.seed * 9);
-  const span = 7 + flap * 3;
-  const ink = enemy.hit > 0 ? PALETTE.lanternCore : '#3a3050';
-  ctx.fillStyle = ink;
+  const span = 10 + flap * 4;
+  const hot = enemy.hit > 0;
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#8a46f0';
   ctx.beginPath();
-  ctx.moveTo(3, 0);
-  ctx.quadraticCurveTo(-2, -span, -9, -span - 1);
-  ctx.quadraticCurveTo(-3, -2, 3, 0);
-  ctx.moveTo(3, 0);
-  ctx.quadraticCurveTo(-2, span, -9, span + 1);
-  ctx.quadraticCurveTo(-3, 2, 3, 0);
+  ctx.moveTo(4, 0);
+  ctx.quadraticCurveTo(-1, -span, -13, -span - 2);
+  ctx.quadraticCurveTo(-4, -3, 4, 0);
+  ctx.moveTo(4, 0);
+  ctx.quadraticCurveTo(-1, span, -13, span + 2);
+  ctx.quadraticCurveTo(-4, 3, 4, 0);
   ctx.fill();
-  ctx.fillStyle = enemy.hit > 0 ? PALETTE.lanternCore : '#cbb8dc';
+  seal(ctx);
+  ctx.fillStyle = hot ? '#fff' : '#ffd15a';
   ctx.beginPath();
-  ctx.ellipse(0, 0, 6, 3.1, 0, 0, Math.PI * 2);
+  ctx.arc(-5, -span * 0.42, 2.2, 0, Math.PI * 2);
+  ctx.arc(-5, span * 0.42, 2.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#ffe6b0';
+  ctx.beginPath();
+  ctx.ellipse(1, 0, 7.2, 3.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  seal(ctx);
+  ctx.fillStyle = '#2a1848';
+  ctx.beginPath();
+  ctx.arc(3.4, -1.15, 1.15, 0, Math.PI * 2);
+  ctx.arc(3.4, 1.15, 1.15, 0, Math.PI * 2);
   ctx.fill();
 }
 
 function drawHound(ctx, enemy) {
-  ctx.fillStyle = enemy.hit > 0 ? PALETTE.lanternCore : '#241820';
+  const hot = enemy.hit > 0;
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#e23d52';
   ctx.beginPath();
-  ctx.ellipse(-2, 0, 12, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(-1, 1, 14, 8.2, 0, 0, Math.PI * 2);
   ctx.fill();
+  seal(ctx);
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#ff8d78';
   ctx.beginPath();
-  ctx.moveTo(8, 0);
-  ctx.lineTo(17, 3.5);
-  ctx.lineTo(17, -3.5);
+  ctx.ellipse(2, 2.2, 7, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#c42840';
+  ctx.beginPath();
+  ctx.moveTo(9, 0);
+  ctx.lineTo(21, 4.4);
+  ctx.lineTo(21, -4.4);
   ctx.closePath();
   ctx.fill();
+  seal(ctx);
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#9a2040';
   ctx.beginPath();
-  ctx.moveTo(-2, -6);
-  ctx.lineTo(-7, -14);
-  ctx.lineTo(1, -6);
-  ctx.moveTo(3, -6);
-  ctx.lineTo(1, -14);
-  ctx.lineTo(8, -5);
+  ctx.moveTo(-3, -6);
+  ctx.lineTo(-9, -16);
+  ctx.lineTo(2, -6);
+  ctx.moveTo(4, -6);
+  ctx.lineTo(2, -16);
+  ctx.lineTo(10, -5);
   ctx.fill();
-  ctx.fillStyle = enemy.mode === 2 ? PALETTE.lantern : PALETTE.danger;
+  seal(ctx);
+  ctx.fillStyle = enemy.mode === 2 ? '#ffe14a' : '#fff6ea';
   ctx.beginPath();
-  ctx.arc(7, -2, 1.7, 0, Math.PI * 2);
+  ctx.arc(8, -2, 2.3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#1a0c10';
+  ctx.beginPath();
+  ctx.arc(8.8, -2, 1.05, 0, Math.PI * 2);
   ctx.fill();
 }
 
 function drawWisp(ctx, enemy, time) {
-  ctx.globalAlpha = enemy.ghost ? 0.28 : 0.92;
-  ctx.fillStyle = enemy.hit > 0 ? PALETTE.lanternCore : '#163448';
+  ctx.globalAlpha = enemy.ghost ? 0.4 : 1;
+  const hot = enemy.hit > 0;
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#14d8c8';
   ctx.beginPath();
-  ctx.arc(0, 0, 11, 0, Math.PI * 2);
+  ctx.arc(0, 0, 12, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = PALETTE.waterGlow;
+  seal(ctx);
   const bob = Math.sin(time * 3 + enemy.seed * 6);
+  ctx.fillStyle = hot ? '#fff' : '#f4fffd';
   ctx.beginPath();
-  ctx.arc(bob * 2, -bob, 4, 0, Math.PI * 2);
+  ctx.arc(bob * 2, -bob, 4.6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#06343a';
+  ctx.beginPath();
+  ctx.arc(bob * 2 + 1.3, -bob, 1.7, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = 1;
 }
 
 function drawBrute(ctx, enemy) {
-  ctx.fillStyle = enemy.hit > 0 ? PALETTE.lanternCore : '#2c2118';
+  const hot = enemy.hit > 0;
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#e8922e';
   ctx.beginPath();
-  ctx.arc(-2, 0, 15, 0, Math.PI * 2);
+  ctx.arc(-1, 0, 16, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = enemy.hit > 0 ? PALETTE.lanternCore : '#6d6254';
+  seal(ctx);
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#ffd18a';
   ctx.beginPath();
-  ctx.moveTo(6, -6);
-  ctx.lineTo(18, -13);
-  ctx.lineTo(8, -1);
-  ctx.moveTo(4, 5);
-  ctx.lineTo(16, 12);
-  ctx.lineTo(6, 2);
+  ctx.arc(-2, 2, 8, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = PALETTE.danger;
-  ctx.fillRect(2, -3, 3, 2);
-  ctx.fillRect(2, 2, 3, 2);
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#fff0d0';
+  ctx.beginPath();
+  ctx.moveTo(8, -6);
+  ctx.lineTo(21, -15);
+  ctx.lineTo(10, -1);
+  ctx.moveTo(6, 5);
+  ctx.lineTo(19, 14);
+  ctx.lineTo(8, 2);
+  ctx.fill();
+  seal(ctx);
+  ctx.fillStyle = '#1a1008';
+  ctx.fillRect(3, -4, 4.2, 2.5);
+  ctx.fillRect(3, 2.2, 4.2, 2.5);
 }
 
 function drawHexer(ctx, enemy, time) {
-  ctx.fillStyle = enemy.hit > 0 ? PALETTE.lanternCore : '#160e24';
+  const hot = enemy.hit > 0;
+  ctx.fillStyle = hot ? PALETTE.lanternCore : '#7438ee';
   ctx.beginPath();
-  ctx.moveTo(0, -15);
-  ctx.lineTo(9, 13);
-  ctx.lineTo(-9, 13);
+  ctx.moveTo(0, -17);
+  ctx.lineTo(12, 14);
+  ctx.lineTo(-12, 14);
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = '#b9a6ff';
-  ctx.lineWidth = 1.5;
+  seal(ctx);
+  ctx.fillStyle = hot ? '#fff' : '#d4b4ff';
   ctx.beginPath();
-  ctx.arc(0, -2, 7 + Math.sin(time * 4 + enemy.seed * 6) * 1.1, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = '#b9a6ff';
-  ctx.beginPath();
-  ctx.arc(0, -2, 2.1, 0, Math.PI * 2);
+  ctx.moveTo(0, -8);
+  ctx.lineTo(5.5, 12);
+  ctx.lineTo(-5.5, 12);
+  ctx.closePath();
   ctx.fill();
+  const rune = 7.2 + Math.sin(time * 4 + enemy.seed * 6) * 1.2;
+  ctx.strokeStyle = '#ffe14a';
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  ctx.arc(0, -2, rune, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = '#fff6c0';
+  ctx.beginPath();
+  ctx.arc(0, -2, 2.7, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#140c18';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
 }

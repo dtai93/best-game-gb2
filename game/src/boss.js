@@ -205,6 +205,10 @@ export function drawBoss(ctx, boss, time) {
   ctx.beginPath();
   ctx.ellipse(0, 14, boss.radius * 0.8, 8, 0, 0, Math.PI * 2);
   ctx.fill();
+  ctx.fillStyle = 'rgba(180, 120, 255, 0.4)';
+  ctx.beginPath();
+  ctx.arc(0, 0, boss.radius + 16, 0, Math.PI * 2);
+  ctx.fill();
   ctx.rotate(boss.spin);
   const spikes = 7 + boss.phase * 2;
   ctx.beginPath();
@@ -218,19 +222,22 @@ export function drawBoss(ctx, boss, time) {
     ctx.lineTo(Math.cos(mid) * inner, Math.sin(mid) * inner);
   }
   ctx.closePath();
-  ctx.fillStyle = boss.hit > 0 ? PALETTE.lanternCore : '#140c22';
+  ctx.fillStyle = boss.hit > 0 ? PALETTE.lanternCore : '#5a34b0';
   ctx.fill();
-  ctx.strokeStyle = boss.phase === 3 ? PALETTE.danger : '#b9a6ff';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = boss.phase === 3 ? PALETTE.danger : '#f0e4ff';
+  ctx.lineWidth = 4;
   ctx.stroke();
   ctx.rotate(-boss.spin);
   ctx.beginPath();
   ctx.arc(0, 0, 11, 0, Math.PI * 2);
-  ctx.fillStyle = boss.phase === 3 ? '#6a2438' : boss.phase === 2 ? '#3a2c66' : '#241848';
+  ctx.fillStyle = boss.phase === 3 ? '#ff5a6a' : boss.phase === 2 ? '#8a62ff' : '#6a44d0';
   ctx.fill();
+  ctx.strokeStyle = '#140c18';
+  ctx.lineWidth = 3;
+  ctx.stroke();
   ctx.beginPath();
   ctx.arc(0, 0, 4.5, 0, Math.PI * 2);
-  ctx.fillStyle = boss.hit > 0 ? PALETTE.lanternCore : boss.phase === 3 ? PALETTE.danger : '#d7ccff';
+  ctx.fillStyle = boss.hit > 0 ? PALETTE.lanternCore : '#fff4c8';
   ctx.fill();
   ctx.restore();
 }

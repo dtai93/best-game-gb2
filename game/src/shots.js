@@ -42,15 +42,73 @@ function posePlay(state, player, foes) {
   if (hexer) hexer.phase = 0.18;
   const wisp = placeShade(foes, 'wisp', -1.7, 188, 0.7);
   if (wisp) wisp.phase = 1.42;
+  const ang = player.body.angle;
   const bolt = state.bolts && state.bolts[0];
   if (bolt) {
     bolt.alive = true;
-    bolt.x = player.body.x + 48;
-    bolt.y = player.body.y - 22;
-    bolt.vx = 0;
-    bolt.vy = 0;
+    bolt.x = player.body.x + Math.cos(ang) * 58;
+    bolt.y = player.body.y + Math.sin(ang) * 58;
+    bolt.vx = Math.cos(ang) * 540;
+    bolt.vy = Math.sin(ang) * 540;
     bolt.life = 0.4;
     bolt.radius = 5;
+  }
+  const bolt2 = state.bolts && state.bolts[1];
+  if (bolt2) {
+    const ang2 = ang + 0.28;
+    bolt2.alive = true;
+    bolt2.x = player.body.x + Math.cos(ang2) * 102;
+    bolt2.y = player.body.y + Math.sin(ang2) * 102;
+    bolt2.vx = Math.cos(ang2) * 540;
+    bolt2.vy = Math.sin(ang2) * 540;
+    bolt2.life = 0.36;
+    bolt2.radius = 5;
+  }
+  placeShade(foes, 'brute', 3.5, 198, 0.25);
+  placeShade(foes, 'moth', -2.55, 128, 0.85);
+  placeShade(foes, 'moth', 1.55, 112, 0.12);
+  placeShade(foes, 'moth', 2.85, 164, 0.66);
+  const charger = placeShade(foes, 'hound', -1.05, 240, 0.92);
+  if (charger) {
+    const dx = player.body.x - charger.x;
+    const dy = player.body.y - charger.y;
+    const dist = Math.hypot(dx, dy) || 1;
+    charger.gx = dx / dist;
+    charger.gy = dy / dist;
+    charger.angle = Math.atan2(dy, dx);
+  }
+  placeShade(foes, 'wisp', 0.2, 220, 0.37);
+  placeShade(foes, 'hexer', -2.95, 250, 0.51);
+  dressPlay(state, player.body.x + Math.cos(ang) * 86, player.body.y + Math.sin(ang) * 86);
+}
+
+function dressPlay(state, x, y) {
+  const sparks = state.particles;
+  if (!sparks) return;
+  sparks.spawn(x + 46, y - 34, {
+    life: 1, size: 0, color: '#ffe14a', text: '+95', scale: 1.45, kind: 'pop',
+  });
+  sparks.spawn(x + 18, y + 28, {
+    life: 1, size: 0, color: '#fff6c8', text: '+40', scale: 1.05, kind: 'pop',
+  });
+  for (let i = 0; i < 9; i += 1) {
+    const a = (i / 9) * Math.PI * 2;
+    sparks.spawn(x, y, {
+      vx: Math.cos(a) * 150,
+      vy: Math.sin(a) * 150,
+      life: 0.5,
+      size: 3.2,
+      color: i % 2 ? '#ffb01a' : '#fff6c4',
+      kind: 'spark',
+    });
+  }
+  for (let i = 0; i < 6; i += 1) {
+    sparks.spawn(x - 28 + i * 12, y + 16 - (i % 3) * 9, {
+      life: 0.8,
+      size: 3.5,
+      color: i % 2 ? '#ff6a22' : '#ffd27a',
+      kind: 'ember',
+    });
   }
 }
 
@@ -101,4 +159,5 @@ function placeShade(foes, type, angle, dist, salt) {
   enemy.y = ARENA.cy + Math.sin(angle) * dist;
   enemy.angle = angle + Math.PI;
   if (type === 'hound') enemy.mode = 2;
+  return enemy;
 }

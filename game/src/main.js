@@ -13,7 +13,7 @@ import { createRng } from './rng.js';
 import { poseShot } from './shots.js';
 import { SCREEN_END, SCREEN_PAUSED, SCREEN_PLAY, SCREEN_TITLE, SCREEN_UPGRADE, upgradeIndexAt } from './ui.js';
 import { applyUpgrade, emptyMods, nightSip, rollOffer } from './upgrades.js';
-import { createWaves, resetWaves, updateWaves } from './waves.js';
+import { createWaves, nightBeats, resetWaves, updateWaves } from './waves.js';
 
 const params = new URLSearchParams(window.location.search);
 const shotName = params.get('shot');
@@ -56,6 +56,8 @@ const state = {
   pulse: 0,
   overheated: false,
   muted: false,
+  embers: 0,
+  surge: { sent: 0, total: 1 },
   mods: emptyMods(),
   loadout: { ranks: {}, offer: [], hover: 0 },
   rng,
@@ -107,6 +109,8 @@ function freshRun() {
   state.flash = 0;
   state.pulse = 0;
   state.overheated = false;
+  state.embers = 0;
+  state.surge = { sent: 0, total: nightBeats(1) };
   state.mods = emptyMods();
   state.loadout.ranks = {};
   state.loadout.offer = [];

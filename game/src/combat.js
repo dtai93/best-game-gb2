@@ -314,6 +314,7 @@ function noteHit(combat, state, enemy, result) {
     : Math.round((4 + chain) * worth);
   state.score += gained;
   if (kill) {
+    state.embers = (state.embers || 0) + Math.max(1, Math.round((enemy.bounty || 90) / 90));
     state.special = Math.min(1, state.special + COMBAT.specialKill * state.mods.special);
     refillOil(state, state.mods.oilOnKill);
     if (state.hear) state.hear('kill');

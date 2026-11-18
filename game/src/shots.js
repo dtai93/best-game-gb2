@@ -3,6 +3,7 @@
 import { ARENA, BOSS } from './config.js';
 import { spawnShade } from './enemies.js';
 import { beginBoss } from './boss.js';
+import { nightBeats } from './waves.js';
 
 /** Paint one named scene onto a freshly reset run. */
 export function poseShot(name, state, player, foes, boss) {
@@ -22,6 +23,8 @@ function posePlay(state, player, foes) {
   state.oil = 0.74;
   state.heat = 0.28;
   state.special = 0.62;
+  state.embers = 18;
+  state.surge = { sent: 4, total: nightBeats(3) };
   state.loadout.ranks = { wick: 1, glass: 1 };
   player.reset(ARENA.cx - 90, ARENA.cy + 70);
   player.body.angle = -0.45;
@@ -120,6 +123,8 @@ function poseBoss(state, player, foes, boss) {
   state.combo = 6;
   state.heat = 0.46;
   state.special = 0.84;
+  state.embers = 47;
+  state.surge = { sent: nightBeats(8), total: nightBeats(8) };
   state.loadout.ranks = { glass: 2, cloak: 1, wick: 1, breath: 1 };
   player.reset(ARENA.cx + 96, ARENA.cy + 86);
   player.body.angle = Math.atan2(-126, -256);

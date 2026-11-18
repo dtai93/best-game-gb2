@@ -131,3 +131,13 @@ Shades in `enemies.js` have saturated bodies, dark outlines, a tinted glow, and 
 Check: `?shot=play&seed=1` on port 18811 (8790 is still the egress tunnel). `__shotReady` was set. No console errors or warnings from the page. `02-play.jpg` is 1280×720, 113417 bytes. The other three shots are still the previous captures.
 
 Next session can punch the HUD and recapture. Do not bind port 8790.
+
+### Session 9 — HUD panels
+
+Replaced the loose play readout in `ui.js` with rounded translucent panels. The night panel names Ashwell, the night, a wave bar from `state.surge`, the dawn / dark win-lose strip, and an eight-night route with a crown on night 8. The boss panel shows The Unlit Crown, phase, and hit points with phase ticks. The score panel shows score, best, chain, and embers. Run gifts list each carried gift with an icon and pip rank against the catalog of 12. Oil, heat, and halo sit in their own panel. A bottom bar of key caps names WASD, LMB, Shift, F, P, and M. There is no relic list because the run has no relics.
+
+`waves.js` writes `state.surge` as each night's script advances. Kills add `state.embers` in `noteHit` (bounty / 90, at least one). The boss and play poses set both so the shots are not zero. P already pauses, so the pause cap matches the key.
+
+Check: `?shot=boss&seed=1` and `?shot=play&seed=1` on port 18811 (8790 is still the egress tunnel). Both JPEGs are 1280×720, under 256 KiB. At 768 px wide the boss HUD still names night, wave, win, lose, the crown, score, best, chain, embers, gifts, oil, heat, halo, and the key caps. No page errors from the shot tool. `02-play.jpg` and `03-boss.jpg` were replaced. Cover and dawn were left as they were.
+
+Do not bind port 8790.

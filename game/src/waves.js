@@ -83,6 +83,11 @@ const NIGHT_SCRIPTS = [
   ],
 ];
 
+export function nightBeats(night) {
+  const script = NIGHT_SCRIPTS[night - 1];
+  return script ? script.length : 0;
+}
+
 export function createWaves() {
   return { clock: 0, cursor: 0, breath: 0, clearing: false };
 }
@@ -110,6 +115,7 @@ export function updateWaves(waves, dt, foes, state) {
     waves.cursor += 1;
     spawnArc(foes, state, event.type, event.count, event.arc);
   }
+  state.surge = { sent: waves.cursor, total: script.length };
   if (waves.cursor < script.length || shadesRemain(foes)) {
     waves.clearing = false;
     return null;

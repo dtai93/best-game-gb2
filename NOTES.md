@@ -4,7 +4,7 @@ Original twin-stick defense roguelite. The player guards a glowing well at the c
 
 Play: keyboard move, mouse aim, click to fire, Shift / right-click / Space to dash. Esc pauses. R restarts to the title. Enter, Space, or click confirms menus.
 
-Deterministic scenes: `?shot=start|play|boss|end&seed=<n>`. A shot paints twice and sets `window.__shotReady`. After boot, all randomness goes through the seeded RNG. `localStorage` key `ashwell.lantern.best` keeps the best score.
+Deterministic scenes: `?shot=play|boss|upgrade|end|dawn&seed=<n>` (`dawn` is the victory pose). A shot paints twice and sets `window.__shotReady`. After boot, all randomness goes through the seeded RNG. `localStorage` key `ashwell.lantern.best` keeps the best score.
 
 ## State (owned by main.js)
 
@@ -141,3 +141,16 @@ Replaced the loose play readout in `ui.js` with rounded translucent panels. The 
 Check: `?shot=boss&seed=1` and `?shot=play&seed=1` on port 18811 (8790 is still the egress tunnel). Both JPEGs are 1280×720, under 256 KiB. At 768 px wide the boss HUD still names night, wave, win, lose, the crown, score, best, chain, embers, gifts, oil, heat, halo, and the key caps. No page errors from the shot tool. `02-play.jpg` and `03-boss.jpg` were replaced. Cover and dawn were left as they were.
 
 Do not bind port 8790.
+
+### Session 10 — screenshot scenes
+
+`shots.js` now stages four deterministic scenes. `boss` is night 8, phase 2, The Unlit Crown mid-wedge, nineteen shades, ember darts, hex motes, crown shards, a hit burst, `+95` pops, and `CHAIN x6!`. `play` is night 5 with a sixteen-shade swarm, four carried gifts, and `CHAIN x4!`. `upgrade` is the night-4 gift choice (Ember Fan, Wide Halo, Swift Cloak) over the lit arena. `dawn` (and `end`) is the victory summary.
+
+`ui.js` lightens the gift cards and draws a dawn stat panel: score, best, nights, chain, embers, gifts, oil, a New Best chip, and an Enter restart cap. `render.js` fills the letterbox with the night sky so a 1024×640 capture is not black bars.
+
+`shots.json` is `01-boss.jpg`, `02-play.jpg`, `03-upgrade.jpg`, `04-dawn.jpg`. Old cover, boss, and end files are removed. Captures ran on port 18811 (8790 is still the egress tunnel) through `shot.mjs` at 1024×640, then Pillow JPEG quality 88. Boss 134215 bytes, play 125140, upgrade 66106, dawn 63165. The boss cover shows the full HUD, the crown, the swarm, projectiles, score pops, and the chain callout. The server was killed after the capture.
+
+`MAKEFUN_OUTPUT_DIR=/tmp/bgout node main.ts` exited 0. `dossier.json` is 664788 bytes and holds the four JPEGs plus `game/index.html`.
+
+Do not bind port 8790.
+

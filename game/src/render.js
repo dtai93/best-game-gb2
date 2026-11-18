@@ -41,7 +41,14 @@ export function createRenderer(canvas) {
   function draw(state) {
     resize();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = PALETTE.void;
+    const sky = ctx.createRadialGradient(
+      canvas.width / 2, canvas.height / 2, canvas.height * 0.15,
+      canvas.width / 2, canvas.height / 2, canvas.height * 0.75,
+    );
+    sky.addColorStop(0, '#3a4c92');
+    sky.addColorStop(0.55, '#2a2060');
+    sky.addColorStop(1, '#1c1840');
+    ctx.fillStyle = sky;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.setTransform(view.scale, 0, 0, view.scale, view.offsetX, view.offsetY);
 

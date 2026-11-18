@@ -345,10 +345,10 @@ function meter(ctx, x, y, w, h, amount, color) {
 
 function panel(ctx, x, y, w, h) {
   roundBox(ctx, x, y, w, h, 16);
-  ctx.fillStyle = 'rgba(16, 10, 14, 0.8)';
+  ctx.fillStyle = 'rgba(42, 24, 16, 0.72)';
   ctx.fill();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = 'rgba(255, 206, 140, 0.78)';
+  ctx.strokeStyle = 'rgba(255, 206, 140, 0.9)';
   ctx.stroke();
 }
 
@@ -573,69 +573,144 @@ function drawPause(ctx) {
 }
 
 function drawUpgrade(ctx, state) {
-  veil(ctx, 0.55);
+  veil(ctx, 0.22);
+  const glow = ctx.createRadialGradient(VIEW.width / 2, 300, 40, VIEW.width / 2, 320, 460);
+  glow.addColorStop(0, 'rgba(255, 186, 70, 0.28)');
+  glow.addColorStop(1, 'rgba(255, 186, 70, 0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(VIEW.width / 2, 320, 460, 0, Math.PI * 2);
+  ctx.fill();
   ctx.textAlign = 'center';
   ctx.fillStyle = PALETTE.dawn;
-  ctx.font = `28px ${FONT}`;
-  ctx.fillText(`Night ${state.night} is quiet`, VIEW.width / 2, 92);
+  ctx.font = `800 32px ${FONT}`;
+  ctx.fillText(`Night ${state.night} is quiet`, VIEW.width / 2, 78);
   ctx.fillStyle = PALETTE.text;
-  ctx.font = `18px ${FONT}`;
-  ctx.fillText('The well offers three gifts. Take one.', VIEW.width / 2, 128);
+  ctx.font = `700 20px ${FONT}`;
+  ctx.fillText('The well offers three gifts. Take one.', VIEW.width / 2, 116);
   const offer = state.loadout.offer;
   for (let i = 0; i < CARDS.length; i += 1) {
     drawCard(ctx, CARDS[i], offer[i], i, state.loadout.hover === i, state);
   }
-  ctx.fillStyle = PALETTE.muted;
-  ctx.font = `16px ${FONT}`;
-  ctx.fillText('1  2  3, or click a card · Enter confirms · R for the title', VIEW.width / 2, 640);
+  ctx.fillStyle = PALETTE.text;
+  ctx.font = `800 18px ${FONT}`;
+  ctx.fillText('1   2   3    or click a card    ·    Enter confirms    ·    R title', VIEW.width / 2, 668);
 }
 
 function drawCard(ctx, rect, card, index, hot, state) {
-  ctx.fillStyle = hot ? 'rgba(36, 28, 18, 0.94)' : 'rgba(16, 14, 12, 0.9)';
-  ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
-  ctx.strokeStyle = hot ? PALETTE.lantern : PALETTE.stoneLight;
-  ctx.lineWidth = hot ? 3 : 1.5;
-  ctx.strokeRect(rect.x + 1, rect.y + 1, rect.w - 2, rect.h - 2);
+  roundBox(ctx, rect.x, rect.y, rect.w, rect.h, 18);
+  ctx.fillStyle = hot ? 'rgba(92, 58, 18, 0.94)' : 'rgba(48, 32, 22, 0.9)';
+  ctx.fill();
+  ctx.strokeStyle = hot ? PALETTE.lantern : '#f0c48a';
+  ctx.lineWidth = hot ? 4 : 2;
+  ctx.stroke();
   ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = PALETTE.lantern;
-  ctx.font = `16px ${FONT}`;
-  ctx.fillText(String(index + 1), rect.x + rect.w / 2, rect.y + 36);
+  ctx.font = `800 22px ${FONT}`;
+  ctx.fillText(String(index + 1), rect.x + 36, rect.y + 36);
   if (!card) return;
+  drawGiftIcon(ctx, card.id, rect.x + rect.w / 2, rect.y + 78);
   ctx.fillStyle = PALETTE.text;
-  ctx.font = `22px ${FONT}`;
-  wrapText(ctx, card.name, rect.x + rect.w / 2, rect.y + 88, rect.w - 36, 28);
-  ctx.fillStyle = PALETTE.ash;
-  ctx.font = `16px ${FONT}`;
-  wrapText(ctx, card.line, rect.x + rect.w / 2, rect.y + 168, rect.w - 40, 22);
+  ctx.font = `800 26px ${FONT}`;
+  wrapText(ctx, card.name, rect.x + rect.w / 2, rect.y + 124, rect.w - 36, 32);
+  ctx.fillStyle = '#ffe6c4';
+  ctx.font = `700 18px ${FONT}`;
+  wrapText(ctx, card.line, rect.x + rect.w / 2, rect.y + 196, rect.w - 40, 24);
   const rank = state.loadout.ranks[card.id] || 0;
-  ctx.fillStyle = PALETTE.muted;
-  ctx.font = `14px ${FONT}`;
-  ctx.fillText(rank > 0 ? `Taken ${rank}` : 'New', rect.x + rect.w / 2, rect.y + rect.h - 28);
+  ctx.fillStyle = rank > 0 ? PALETTE.lantern : PALETTE.dawn;
+  ctx.font = `800 18px ${FONT}`;
+  ctx.fillText(rank > 0 ? `Taken ${rank}` : 'New gift', rect.x + rect.w / 2, rect.y + rect.h - 36);
+  ctx.textBaseline = 'alphabetic';
 }
 
 function drawEnding(ctx, state) {
-  veil(ctx, 0.55);
   const won = state.outcome === 'dawn';
+  veil(ctx, won ? 0.24 : 0.58);
+  if (won) {
+    const glow = ctx.createRadialGradient(VIEW.width / 2, 250, 20, VIEW.width / 2, 280, 480);
+    glow.addColorStop(0, 'rgba(255, 214, 120, 0.5)');
+    glow.addColorStop(1, 'rgba(255, 180, 60, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(VIEW.width / 2, 280, 480, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  const cx = VIEW.width / 2;
   ctx.textAlign = 'center';
-  ctx.fillStyle = won ? PALETTE.dawn : PALETTE.danger;
-  ctx.font = `54px ${FONT}`;
-  ctx.fillText(won ? 'Dawn' : 'The well goes dark', VIEW.width / 2, 250);
-  ctx.fillStyle = PALETTE.ash;
-  ctx.font = `18px ${FONT}`;
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = won ? '#fff1c2' : PALETTE.danger;
+  ctx.font = `800 64px ${FONT}`;
+  ctx.fillText(won ? 'DAWN' : 'DARK', cx, 78);
+  ctx.fillStyle = PALETTE.text;
+  ctx.font = `700 20px ${FONT}`;
   ctx.fillText(
     won ? 'The Unlit Crown breaks. The lantern holds until morning.' : 'The oil is gone. The stones go quiet.',
-    VIEW.width / 2,
-    298,
+    cx,
+    124,
   );
+
+  const rows = [
+    ['SCORE', grouped(state.score), PALETTE.text],
+    ['BEST', grouped(state.best), PALETTE.dawn],
+    ['NIGHTS', `${state.night} / ${NIGHTS}`, PALETTE.teal],
+    ['CHAIN', `x${state.combo || 0}`, PALETTE.lantern],
+    ['EMBERS', grouped(state.embers || 0), PALETTE.ember],
+    ['GIFTS', `${ownedGifts(state).length} / ${UPGRADES.length}`, PALETTE.ash],
+    ['OIL', `${Math.round((state.oil || 0) * 100)}%`, state.oil > 0.2 ? PALETTE.lantern : PALETTE.danger],
+  ];
+  const w = 560;
+  const x = cx - w / 2;
+  const y = 156;
+  const h = 46 + rows.length * 42;
+  panel(ctx, x, y, w, h);
+  for (let i = 0; i < rows.length; i += 1) {
+    const rowY = y + 36 + i * 42;
+    const [name, value, color] = rows[i];
+    ctx.textAlign = 'left';
+    ctx.font = `800 18px ${FONT}`;
+    ctx.fillStyle = PALETTE.muted;
+    ctx.fillText(name, x + 28, rowY);
+    ctx.textAlign = 'right';
+    ctx.font = `800 ${i === 0 ? 32 : 22}px ${FONT}`;
+    ctx.fillStyle = color;
+    const valueW = ctx.measureText(value).width;
+    ctx.fillText(value, x + w - 28, rowY);
+    if (won && i === 1 && state.score >= state.best && state.score > 0) {
+      ctx.font = `800 14px ${FONT}`;
+      const tag = 'NEW BEST';
+      const tagW = ctx.measureText(tag).width + 16;
+      const tagX = x + w - 28 - valueW - 14 - tagW;
+      roundBox(ctx, tagX, rowY - 12, tagW, 24, 8);
+      ctx.fillStyle = PALETTE.lantern;
+      ctx.fill();
+      ctx.fillStyle = '#1c120c';
+      ctx.textAlign = 'center';
+      ctx.fillText(tag, tagX + tagW / 2, rowY);
+    }
+  }
+
+  const cap = 'ENTER';
+  ctx.font = `800 18px ${FONT}`;
+  const capW = ctx.measureText(cap).width + 22;
+  const label = 'RESTART';
+  const labelW = ctx.measureText(label).width;
+  const total = capW + 12 + labelW;
+  const capX = cx - total / 2;
+  const capY = y + h + 28;
+  roundBox(ctx, capX, capY, capW, 36, 8);
+  ctx.fillStyle = '#fff3d6';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#24160e';
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#1c120c';
+  ctx.fillText(cap, capX + capW / 2, capY + 18);
+  ctx.textAlign = 'left';
   ctx.fillStyle = PALETTE.text;
-  ctx.font = `26px ${FONT}`;
-  ctx.fillText(`Score ${state.score}`, VIEW.width / 2, 360);
-  ctx.fillStyle = PALETTE.lantern;
-  ctx.font = `20px ${FONT}`;
-  ctx.fillText(`Best ${state.best}`, VIEW.width / 2, 396);
-  ctx.fillStyle = PALETTE.muted;
-  ctx.font = `18px ${FONT}`;
-  ctx.fillText('Enter or R restarts', VIEW.width / 2, 460);
+  ctx.fillText(label, capX + capW + 12, capY + 18);
+  ctx.textBaseline = 'alphabetic';
 }
 
 function veil(ctx, alpha) {

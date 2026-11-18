@@ -194,3 +194,11 @@ Recaptured `01-boss.jpg` on port 18811 (8790 is still the egress tunnel) through
 
 Do not bind port 8790.
 
+### Session 14 — title crest
+
+`emblem.js` paints the title crest in canvas shapes: a gold bezel, stone well, teal water, a hanging lantern, and the crowned shade reaching for the flame. `title-screen.js` sets that crest beside the ASHWELL wordmark and keeps the how-a-run, difficulty, workshop, records, and controls panels. Road cards in `night-screen.js` split pace and payout onto two lines so "FEWER SLOWER" and "+16% OIL" stay inside the node.
+
+Recaptured all four shots on port 18821 (8790 is still the egress tunnel) through `shot.mjs` at 1024×640, then Pillow JPEG quality 88. Boss 211378 bytes, title 138065, road 107487, victory 107691. The title shows the crest, the wordmark, and the dense panels. The road modifiers are fully inside their cards. Boss, gifts, and dawn are unchanged in layout.
+
+Do not bind port 8790.
+

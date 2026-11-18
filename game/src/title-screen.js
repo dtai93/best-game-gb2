@@ -1,26 +1,31 @@
-/** Title: how a run works, difficulty, workshop, records, controls, and play. */
+/** Title: crest, how a run works, difficulty, workshop, records, controls, and play. */
 
 import { FONT, PALETTE, VIEW } from './config.js';
+import { drawTitleEmblem } from './emblem.js';
 import { DIFFICULTIES, UNLOCKS } from './meta.js';
 import { card, grouped, inside, keyCap, panel } from './screen-kit.js';
 
-const PLAY = { x: 1028, y: 18, w: 236, h: 74 };
+const PLAY = { x: 1028, y: 16, w: 236, h: 70 };
+const EMBLEM = { cx: 128, cy: 126, r: 108 };
+const HOW = { x: 252, y: 96, w: 360, h: 148 };
+const WORK = { y: 256, h: 216 };
+const LOWER = { y: 484, h: 224 };
 
 function diffRects() {
-  const w = 246;
-  const h = 180;
+  const w = 204;
+  const h = HOW.h;
   const gap = 12;
-  const x0 = 496;
-  return DIFFICULTIES.map((diff, i) => ({ id: diff.id, x: x0 + i * (w + gap), y: 108, w, h }));
+  const x0 = 624;
+  return DIFFICULTIES.map((diff, i) => ({ id: diff.id, x: x0 + i * (w + gap), y: HOW.y, w, h }));
 }
 
 function unlockRects() {
   const w = 298;
-  const h = 72;
+  const h = 70;
   const gapX = 10;
   const gapY = 8;
   const x0 = 28;
-  const y0 = 340;
+  const y0 = 292;
   return UNLOCKS.map((_, i) => ({
     x: x0 + (i % 4) * (w + gapX),
     y: y0 + Math.floor(i / 4) * (h + gapY),
@@ -44,6 +49,7 @@ export function titleHit(x, y) {
 
 export function drawTitleScreen(ctx, state) {
   const profile = state.profile || { embers: 0, unlocks: {}, records: [], difficulty: 'journeyman' };
+  drawTitleEmblem(ctx, EMBLEM.cx, EMBLEM.cy, EMBLEM.r, state.time || 0);
   drawLogo(ctx, state);
   drawHow(ctx);
   drawDifficulties(ctx, profile);
@@ -53,27 +59,14 @@ export function drawTitleScreen(ctx, state) {
 }
 
 function drawLogo(ctx, state) {
-  ctx.save();
-  ctx.translate(36, 54);
-  ctx.beginPath();
-  ctx.arc(0, 0, 22, 0, Math.PI * 2);
-  ctx.fillStyle = '#ffb01a';
-  ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(0, 10);
-  ctx.quadraticCurveTo(8, 0, 0, -14);
-  ctx.quadraticCurveTo(-8, 0, 0, 10);
-  ctx.fillStyle = '#fff6c4';
-  ctx.fill();
-  ctx.restore();
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = PALETTE.text;
-  ctx.font = `800 52px ${FONT}`;
-  ctx.fillText('ASHWELL', 70, 42);
+  ctx.font = `800 48px ${FONT}`;
+  ctx.fillText('ASHWELL', 256, 38);
   ctx.fillStyle = PALETTE.lantern;
-  ctx.font = `700 20px ${FONT}`;
-  ctx.fillText('LANTERN OF THE LAST WELL', 72, 78);
+  ctx.font = `700 18px ${FONT}`;
+  ctx.fillText('LANTERN OF THE LAST WELL', 258, 70);
   const pulse = 0.85 + 0.15 * Math.sin((state.time || 0) * 3);
   ctx.globalAlpha = pulse;
   card(ctx, PLAY.x, PLAY.y, PLAY.w, PLAY.h, true);
@@ -85,12 +78,12 @@ function drawLogo(ctx, state) {
 }
 
 function drawHow(ctx) {
-  panel(ctx, 16, 108, 464, 180);
+  panel(ctx, HOW.x, HOW.y, HOW.w, HOW.h);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.font = `800 20px ${FONT}`;
+  ctx.font = `800 16px ${FONT}`;
   ctx.fillStyle = PALETTE.lantern;
-  ctx.fillText('HOW A RUN WORKS', 32, 132);
+  ctx.fillText('HOW A RUN WORKS', HOW.x + 14, HOW.y + 22);
   const rows = [
     ['GOAL', 'Guard the well for 8 nights'],
     ['WIN', 'Dawn, when the Crown breaks'],
@@ -98,13 +91,13 @@ function drawHow(ctx) {
     ['TIP', 'Take a gift, then pick a road'],
   ];
   for (let i = 0; i < rows.length; i += 1) {
-    const y = 164 + i * 28;
-    ctx.font = `800 18px ${FONT}`;
+    const y = HOW.y + 48 + i * 24;
+    ctx.font = `800 14px ${FONT}`;
     ctx.fillStyle = PALETTE.ember;
-    ctx.fillText(rows[i][0], 32, y);
-    ctx.font = `700 18px ${FONT}`;
+    ctx.fillText(rows[i][0], HOW.x + 14, y);
+    ctx.font = `700 14px ${FONT}`;
     ctx.fillStyle = PALETTE.text;
-    ctx.fillText(rows[i][1], 108, y);
+    ctx.fillText(rows[i][1], HOW.x + 68, y);
   }
 }
 
@@ -117,18 +110,18 @@ function drawDifficulties(ctx, profile) {
     card(ctx, rect.x, rect.y, rect.w, rect.h, on);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.font = `800 24px ${FONT}`;
+    ctx.font = `800 20px ${FONT}`;
     ctx.fillStyle = on ? PALETTE.lantern : PALETTE.text;
-    ctx.fillText(diff.name, rect.x + 16, rect.y + 32);
-    ctx.font = `800 16px ${FONT}`;
+    ctx.fillText(diff.name, rect.x + 12, rect.y + 26);
+    ctx.font = `800 13px ${FONT}`;
     ctx.fillStyle = on ? '#1c120c' : PALETTE.muted;
     const tag = on ? 'SELECTED' : 'A / D';
-    ctx.fillText(tag, rect.x + 16, rect.y + 58);
+    ctx.fillText(tag, rect.x + 12, rect.y + 46);
     const lines = diffLines(diff);
-    ctx.font = `700 18px ${FONT}`;
+    ctx.font = `700 15px ${FONT}`;
     ctx.fillStyle = PALETTE.text;
     for (let line = 0; line < lines.length; line += 1) {
-      ctx.fillText(lines[line], rect.x + 16, rect.y + 92 + line * 24);
+      ctx.fillText(lines[line], rect.x + 12, rect.y + 70 + line * 18);
     }
   }
 }
@@ -140,16 +133,16 @@ function diffLines(diff) {
 }
 
 function drawWorkshop(ctx, profile) {
-  panel(ctx, 16, 300, VIEW.width - 32, 196);
+  panel(ctx, 16, WORK.y, VIEW.width - 32, WORK.h);
   const owned = ownedCount(profile);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.font = `800 20px ${FONT}`;
   ctx.fillStyle = PALETTE.lantern;
-  ctx.fillText(`WORKSHOP — ${owned}/${UNLOCKS.length} PERMANENT UNLOCKS`, 32, 324);
+  ctx.fillText(`WORKSHOP — ${owned}/${UNLOCKS.length} PERMANENT UNLOCKS`, 32, WORK.y + 22);
   ctx.textAlign = 'right';
   ctx.fillStyle = PALETTE.ember;
-  ctx.fillText(`${grouped(profile.embers)} EMBERS`, VIEW.width - 32, 324);
+  ctx.fillText(`${grouped(profile.embers)} EMBERS`, VIEW.width - 32, WORK.y + 22);
   const slots = unlockRects();
   for (let i = 0; i < slots.length; i += 1) {
     const rect = slots[i];
@@ -170,36 +163,37 @@ function drawWorkshop(ctx, profile) {
 }
 
 function drawRecords(ctx, profile, state) {
-  panel(ctx, 16, 508, 860, 196);
+  panel(ctx, 16, LOWER.y, 860, LOWER.h);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.font = `800 20px ${FONT}`;
   ctx.fillStyle = PALETTE.dawn;
-  ctx.fillText('BEST RUNS', 32, 532);
+  ctx.fillText('BEST RUNS', 32, LOWER.y + 24);
   ctx.fillStyle = PALETTE.teal;
-  ctx.fillText(`FEATS ${featCount(profile)}/8`, 220, 532);
+  ctx.fillText(`FEATS ${featCount(profile)}/8`, 220, LOWER.y + 24);
   ctx.textAlign = 'right';
   ctx.fillStyle = PALETTE.lantern;
-  ctx.fillText(`BEST ${grouped(state.best)}`, 856, 532);
+  ctx.fillText(`BEST ${grouped(state.best)}`, 856, LOWER.y + 24);
   const rows = (profile.records || []).slice(0, 5);
   ctx.font = `800 16px ${FONT}`;
   ctx.textAlign = 'left';
   ctx.fillStyle = PALETTE.muted;
-  ctx.fillText('GRADE', 32, 562);
-  ctx.fillText('SCORE', 130, 562);
-  ctx.fillText('NIGHT', 280, 562);
-  ctx.fillText('CHAIN', 390, 562);
-  ctx.fillText('OIL', 500, 562);
-  ctx.fillText('DIFFICULTY', 600, 562);
+  const headY = LOWER.y + 52;
+  ctx.fillText('GRADE', 32, headY);
+  ctx.fillText('SCORE', 130, headY);
+  ctx.fillText('NIGHT', 280, headY);
+  ctx.fillText('CHAIN', 390, headY);
+  ctx.fillText('OIL', 500, headY);
+  ctx.fillText('DIFFICULTY', 600, headY);
   ctx.font = `700 18px ${FONT}`;
   if (!rows.length) {
     ctx.fillStyle = PALETTE.text;
-    ctx.fillText('No finished runs yet.', 32, 598);
+    ctx.fillText('No finished runs yet.', 32, headY + 36);
     return;
   }
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i];
-    const y = 590 + i * 22;
+    const y = LOWER.y + 80 + i * 26;
     ctx.fillStyle = PALETTE.lantern;
     ctx.fillText(row.grade || '—', 32, y);
     ctx.fillStyle = PALETTE.text;
@@ -212,12 +206,12 @@ function drawRecords(ctx, profile, state) {
 }
 
 function drawControlCard(ctx) {
-  panel(ctx, 888, 508, 376, 196);
+  panel(ctx, 888, LOWER.y, 376, LOWER.h);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   ctx.font = `800 20px ${FONT}`;
   ctx.fillStyle = PALETTE.lantern;
-  ctx.fillText('CONTROLS', 904, 532);
+  ctx.fillText('CONTROLS', 904, LOWER.y + 24);
   const rows = [
     ['WASD', 'MOVE'],
     ['LMB', 'FIRE'],
@@ -230,8 +224,8 @@ function drawControlCard(ctx) {
     const col = i < 3 ? 0 : 1;
     const row = i % 3;
     const x = 904 + col * 180;
-    const y = 556 + row * 44;
-    const w = keyCap(ctx, x, y, rows[i][0], 30);
+    const y = LOWER.y + 58 + row * 52;
+    const w = keyCap(ctx, x, y, rows[i][0], 32);
     ctx.font = `800 16px ${FONT}`;
     ctx.fillStyle = PALETTE.text;
     ctx.textAlign = 'left';

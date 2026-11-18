@@ -201,26 +201,34 @@ function drawOption(ctx, rect, type, hot) {
   drawNodeMark(ctx, type, rect.x + 28, rect.y + rect.h / 2, 16);
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
+  const lines = nodeLines(type);
+  const nameY = rect.y + rect.h / 2 - (lines.length > 1 ? 16 : 12);
   ctx.font = `800 18px ${FONT}`;
   ctx.fillStyle = nodeInk(type);
-  ctx.fillText((info.name || type || '').toUpperCase(), rect.x + 52, rect.y + rect.h / 2 - 12);
-  ctx.font = `700 14px ${FONT}`;
+  ctx.fillText((info.name || type || '').toUpperCase(), rect.x + 52, nameY);
+  ctx.font = `700 13px ${FONT}`;
   ctx.fillStyle = PALETTE.text;
-  ctx.fillText(nodeLine(type), rect.x + 52, rect.y + rect.h / 2 + 12);
+  for (let i = 0; i < lines.length; i += 1) {
+    ctx.fillText(lines[i], rect.x + 52, nameY + 16 + i * 14);
+  }
 }
 
-function nodeLine(type) {
+function nodeLines(type) {
   const info = nodeInfo(type);
-  if (type === 'boss') return 'THE CROWN';
-  const bits = [];
-  if (info.count <= 0) bits.push('QUIET');
-  else if (info.count > 1) bits.push('MORE');
-  else if (info.count < 1) bits.push('FEWER');
-  if (info.speed > 1) bits.push('FASTER');
-  else if (info.speed < 1) bits.push('SLOWER');
-  if (info.oil) bits.push(`+${Math.round(info.oil * 100)}% OIL`);
-  if (info.embers) bits.push(`+${info.embers}`);
-  return bits.join(' ') || 'FULL NIGHT';
+  if (type === 'boss') return ['THE CROWN'];
+  const pace = [];
+  if (info.count <= 0) pace.push('QUIET');
+  else if (info.count > 1) pace.push('MORE');
+  else if (info.count < 1) pace.push('FEWER');
+  if (info.speed > 1) pace.push('FASTER');
+  else if (info.speed < 1) pace.push('SLOWER');
+  const pay = [];
+  if (info.oil) pay.push(`+${Math.round(info.oil * 100)}% OIL`);
+  if (info.embers) pay.push(`+${info.embers}`);
+  const lines = [];
+  if (pace.length) lines.push(pace.join(' '));
+  if (pay.length) lines.push(pay.join(' '));
+  return lines.length ? lines : ['FULL NIGHT'];
 }
 
 function drawFooter(ctx, state) {
